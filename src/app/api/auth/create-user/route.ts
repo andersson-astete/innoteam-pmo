@@ -1,4 +1,3 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -15,26 +14,33 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
+    // Use Supabase REST API directly with proper headers
+    const response = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
+      method: 'POST',
+      headers: {
+        'apikey': serviceRoleKey,
+        'Authorization': `Bearer ${serviceRoleKey}`,
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          role,
+          full_name: email.split('@')[0],
+        },
+      }),
     })
 
-    const { data, error } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: {
-        role,
-        full_name: email.split('@')[0],
-      },
-    })
+    const data = await response.json()
 
-    if (error) {
-      console.error('Auth error:', error)
-      return NextResponse.json({ error: error.message }, { status: 400 })
+    if (!response.ok) {
+      console.error('Supabase error:', data)
+      return NextResponse.json(
+        { error: data.msg || data.error || 'Error creating user' },
+        { status: response.status }
+      )
     }
 
     return NextResponse.json({
