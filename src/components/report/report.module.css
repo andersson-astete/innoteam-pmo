@@ -946,6 +946,158 @@
   border-radius: 3px;
 }
 
+/* Caption "qué muestra" bajo el título del gráfico */
+.cap {
+  font-size: 11px;
+  color: var(--ink2);
+  margin-top: 2px;
+}
+.cap b {
+  color: var(--ink);
+}
+
+/* Banner de estado (semáforo) */
+.health {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--line2);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+.healthDot {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+.healthMain .lvl {
+  font-size: 18px;
+  font-weight: 800;
+}
+.healthMain .msg {
+  font-size: 12.5px;
+  color: var(--ink2);
+  margin-top: 2px;
+}
+
+/* Lista de riesgos semáforo */
+.riskList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.riskItem {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.riskItem .rdot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.riskItem .rlabel {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.riskItem .rreason {
+  font-size: 11px;
+  color: var(--ink3);
+}
+.riskItem .rscore {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Mini-matriz 3x3 */
+.rgrid {
+  display: grid;
+  grid-template-columns: 46px repeat(3, 1fr);
+  gap: 4px;
+  margin-top: 12px;
+}
+.rgrid .axisY {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 9px;
+  color: var(--ink3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rgrid .cell {
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  padding: 10px 0;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.rgrid .cellLabel {
+  font-size: 9px;
+  color: var(--ink3);
+  text-align: center;
+  padding-top: 3px;
+}
+.rgridFoot {
+  display: grid;
+  grid-template-columns: 46px repeat(3, 1fr);
+  gap: 4px;
+}
+
+/* Lista de fechas en riesgo */
+.overdue {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.overdueItem {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  padding: 7px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.overdueItem .od {
+  color: var(--coral);
+  font-weight: 700;
+}
+.okState {
+  font-size: 12.5px;
+  color: var(--ok);
+  padding: 10px 2px;
+}
+
+/* Header con logos */
+.brandRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.brandX {
+  color: var(--ink3);
+  font-weight: 700;
+}
+
 /* Sociedades por país (árbol) */
 .tree {
   display: grid;

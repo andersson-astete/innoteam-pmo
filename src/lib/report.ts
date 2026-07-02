@@ -207,3 +207,101 @@ export function buildRiskMatrix(list: FlatDeliverable[], phases: Phase[], today 
 
   return risks.sort((a, b) => b.score - a.score)
 }
+
+// ---------- Salud del proyecto (semáforo + mensaje ejecutivo) ----------
+export interface Health {
+  level: 'En marcha' | 'En riesgo' | 'Crítico'
+  color: string
+  message: string
+}
+export function projectHealth(
+  list: FlatDeliverable[],
+  risks: RiskItem[],
+  overdueCount: number,
+  countryLabel: (code: string) => string
+): Health {
+  const avg = avgOf(list)
+  const high = risks.filter((r) => r.level === 'Crítico' || r.level === 'Alto').length
+  const inUAT = list.filter((x) => x.est === 'testing' || x.est === 'client').length
+  const inPRD = list.filter((x) => x.est === 'go').length
+
+  let level: Health['level'] = 'En marcha'
+  let color = '#34D399'
+  if (high >= 5 || avg < 25) {
+    level = 'Crítico'
+    color = '#F87171'
+  } else if (high >= 1 || overdueCount > 0 || avg < 50) {
+    level = 'En riesgo'
+    color = '#FBBF24'
+  }
+
+  // Frentes en riesgo (países con avance bajo)
+  const paisCodes = Array.from(new Set(list.map((x) => x.f)))
+  const frentes = paisCodes
+    .filter((code) => avgOf(list.filter((x) => x.f === code)) < 40)
+    .map((code) => countryLabel(code))
+
+  const parts = [`Avance global ${avg}%`, `${inUAT} en UAT`, inPRD ? `${inPRD} en producción` : '']
+  if (frentes.length) parts.push(`${frentes.length} frente(s) en riesgo: ${frentes.join(', ')}`)
+  if (overdueCount) parts.push(`${overdueCount} con fecha vencida`)
+  const message = parts.filter(Boolean).join(' · ')
+
+  return { level, color, message }
+}
+
+// ---------- Mini-matriz de riesgos 3×3 (conteos) ----------
+export interface RiskGridCell {
+  probBand: 'Baja' | 'Media' | 'Alta'
+  impactBand: 'Bajo' | 'Medio' | 'Alto'
+  count: number
+  color: string
+}
+const band3 = (v: number): 0 | 1 | 2 => (v >= 4 ? 2 : v >= 3 ? 1 : 0)
+export function riskGrid(risks: RiskItem[]): RiskGridCell[][] {
+  const probLabels: RiskGridCell['probBand'][] = ['Baja', 'Media', 'Alta']
+  const impLabels: RiskGridCell['impactBand'][] = ['Bajo', 'Medio', 'Alto']
+  // filas = impacto (Alto arriba), columnas = probabilidad
+  const counts = [
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+  ]
+  risks.forEach((r) => {
+    counts[band3(r.impact)][band3(r.probability)]++
+  })
+  const cellColor = (pi: number, ii: number) => {
+    const s = pi + ii // 0..4
+    return s >= 3 ? 'rgba(248,113,113,.22)' : s >= 2 ? 'rgba(251,191,36,.20)' : 'rgba(52,211,153,.16)'
+  }
+  const grid: RiskGridCell[][] = []
+  for (let ii = 2; ii >= 0; ii--) {
+    const row: RiskGridCell[] = []
+    for (let pi = 0; pi < 3; pi++) {
+      row.push({ probBand: probLabels[pi], impactBand: impLabels[ii], count: counts[ii][pi], color: cellColor(pi, ii) })
+    }
+    grid.push(row)
+  }
+  return grid
+}
+
+// ---------- Fechas en riesgo (fase con fecha vencida sin completar) ----------
+export interface OverdueItem {
+  label: string
+  pais: string
+  phase: string
+  date: string
+}
+export function overdueItems(list: FlatDeliverable[], phases: Phase[], today = new Date()): OverdueItem[] {
+  const out: OverdueItem[] = []
+  list.forEach((d) => {
+    d.phase_states.forEach((s, i) => {
+      if (s?.date && !s.done) {
+        const t = Date.parse(s.date)
+        if (!isNaN(t) && new Date(t) < today) {
+          out.push({ label: `${d.soc} · ${d.rep}`, pais: d.f, phase: phases[i]?.name || `Fase ${i + 1}`, date: s.date })
+        }
+      }
+    })
+  })
+  return out.sort((a, b) => Date.parse(a.date) - Date.parse(b.date))
+}

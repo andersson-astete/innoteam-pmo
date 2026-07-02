@@ -26,6 +26,9 @@ export interface PhaseState {
   done: boolean
   date: string | null
 }
+export interface TeamMember {
+  name: string
+}
 export interface Project {
   id: string
   name: string
@@ -37,10 +40,23 @@ export interface Project {
   sponsor: string | null
   project_lead: string | null
   user_lead: string | null
+  pm: string | null
+  functional_team: TeamMember[]
+  technical_team: TeamMember[]
   stage: Stage
   stage_order: number
   created_at: string
   updated_at: string
+}
+export interface Settings {
+  id: number
+  innoteam_logo_url: string | null
+  org_name: string
+}
+
+export async function getSettings(): Promise<Settings | null> {
+  const { data } = await supabase.from('settings').select('*').eq('id', 1).single()
+  return (data as Settings) || null
 }
 export interface Country {
   id: string

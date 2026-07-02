@@ -4,11 +4,14 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import {
   getProjectData,
+  getSettings,
   flattenDeliverables,
   type ProjectData,
+  type Settings,
   type Stage,
 } from '@/lib/supabase'
 import { avgOf, bandColorHex } from '@/lib/report'
+import { Logo } from './Logo'
 import styles from './overview.module.css'
 
 const STAGE_LABEL: Record<Stage, { label: string; color: string }> = {
@@ -21,13 +24,15 @@ const STAGE_LABEL: Record<Stage, { label: string; color: string }> = {
 
 export default function ProjectOverview({ projectId, canEdit }: { projectId: string; canEdit: boolean }) {
   const [data, setData] = useState<ProjectData | null>(null)
+  const [settings, setSettings] = useState<Settings | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let alive = true
-    getProjectData(projectId).then((d) => {
+    Promise.all([getProjectData(projectId), getSettings()]).then(([d, s]) => {
       if (alive) {
         setData(d)
+        setSettings(s)
         setLoading(false)
       }
     })
@@ -47,6 +52,12 @@ export default function ProjectOverview({ projectId, canEdit }: { projectId: str
 
   return (
     <div className={styles.wrap}>
+      {/* Marca: InnoTeam × Cliente */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, flexWrap: 'wrap' }}>
+        <Logo url={settings?.innoteam_logo_url} name="InnoTeam" kind="innoteam" height={30} />
+        <span style={{ color: 'var(--ink3)', fontWeight: 700 }}>×</span>
+        <Logo url={project.client_logo_url} name={project.name} kind="client" color={project.brand_color} height={30} />
+      </div>
       <div className={styles.top}>
         <div>
           <div className={styles.titleRow}>
@@ -113,12 +124,24 @@ export default function ProjectOverview({ projectId, canEdit }: { projectId: str
           <div className="val">{project.sponsor || 'Por definir'}</div>
         </div>
         <div className={styles.infoCard}>
-          <div className="lab">Líder de Proyecto (InnoTeam)</div>
-          <div className="val">{project.project_lead || 'Por definir'}</div>
+          <div className="lab">PM (InnoTeam)</div>
+          <div className="val">{project.pm || project.project_lead || 'Por definir'}</div>
         </div>
         <div className={styles.infoCard}>
           <div className="lab">Líder Usuario (Cliente)</div>
           <div className="val">{project.user_lead || 'Por definir'}</div>
+        </div>
+        <div className={styles.infoCard}>
+          <div className="lab">Consultores funcionales</div>
+          <div className="val">
+            {project.functional_team?.length ? project.functional_team.map((m) => m.name).join(', ') : 'Por definir'}
+          </div>
+        </div>
+        <div className={styles.infoCard}>
+          <div className="lab">Consultores técnicos</div>
+          <div className="val">
+            {project.technical_team?.length ? project.technical_team.map((m) => m.name).join(', ') : 'Por definir'}
+          </div>
         </div>
       </div>
 

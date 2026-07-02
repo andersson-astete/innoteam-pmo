@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import Link from 'next/link'
 import ReactECharts from 'echarts-for-react'
-import 'echarts-gl'
 import {
   getProjectData,
+  getSettings,
   flattenDeliverables,
   type ProjectData,
+  type Settings,
   type FlatDeliverable,
   type Status,
 } from '@/lib/supabase'
@@ -19,8 +20,11 @@ import {
   estCounts,
   phaseCounts,
   buildRiskMatrix,
-  type RiskItem,
+  projectHealth,
+  riskGrid,
+  overdueItems,
 } from '@/lib/report'
+import { Logo } from './Logo'
 import styles from './report.module.css'
 
 function cv(name: string, fallback = '#888'): string {
@@ -28,12 +32,20 @@ function cv(name: string, fallback = '#888'): string {
   const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
   return v || fallback
 }
-const LEVEL_COLOR: Record<RiskItem['level'], string> = {
-  Crítico: '#F87171',
-  Alto: '#FB923C',
-  Medio: '#FBBF24',
-  Bajo: '#34D399',
-}
+const LEVEL_COLOR = { Crítico: '#F87171', Alto: '#FB923C', Medio: '#FBBF24', Bajo: '#34D399' } as const
+
+// Degradado para dar relieve a las barras (no planas)
+const grad = (from: string, to: string) => ({
+  type: 'linear',
+  x: 0,
+  y: 0,
+  x2: 1,
+  y2: 0,
+  colorStops: [
+    { offset: 0, color: from },
+    { offset: 1, color: to },
+  ],
+})
 
 interface ModalData {
   title: string
@@ -44,18 +56,19 @@ interface ModalData {
 
 export default function ReportView({ projectId, canEdit }: { projectId: string; canEdit: boolean }) {
   const [data, setData] = useState<ProjectData | null>(null)
+  const [settings, setSettings] = useState<Settings | null>(null)
   const [loading, setLoading] = useState(true)
   const [pais, setPais] = useState('all')
-  const [estado, setEstado] = useState('all')
   const [themeTick, setThemeTick] = useState(0)
   const [modal, setModal] = useState<ModalData | null>(null)
 
   useEffect(() => {
     let alive = true
     setLoading(true)
-    getProjectData(projectId).then((d) => {
+    Promise.all([getProjectData(projectId), getSettings()]).then(([d, s]) => {
       if (alive) {
         setData(d)
+        setSettings(s)
         setLoading(false)
       }
     })
@@ -74,15 +87,9 @@ export default function ReportView({ projectId, canEdit }: { projectId: string; 
   const countries = data?.countries || []
   const phases = data?.project.phases || []
 
-  const fD = useMemo(
-    () => flat.filter((d) => (pais === 'all' || d.f === pais) && (estado === 'all' || d.est === estado)),
-    [flat, pais, estado]
-  )
-
-  const reset = useCallback(() => {
-    setPais('all')
-    setEstado('all')
-  }, [])
+  // Filtro único por país — TODOS los gráficos usan fD
+  const fD = useMemo(() => flat.filter((d) => pais === 'all' || d.f === pais), [flat, pais])
+  const reset = useCallback(() => setPais('all'), [])
 
   if (loading) return <div className={styles.loading}>Cargando reporte…</div>
   if (!data) return <div className={styles.loading}>Proyecto no encontrado.</div>
@@ -93,200 +100,65 @@ export default function ReportView({ projectId, canEdit }: { projectId: string; 
   }
   const countryName = (code: string) => countries.find((c) => c.code === code)?.name || code
 
-  const avg = avgOf(fD)
   const counts = estCounts(fD)
-  const societies = socList(flat)
   const risks = buildRiskMatrix(fD, phases)
-  const criticalRisks = risks.filter((r) => r.level === 'Crítico' || r.level === 'Alto').length
-
-  // ---- Colores tema ----
+  const overdue = overdueItems(fD, phases)
+  const health = projectHealth(fD, risks, overdue.length, countryName)
+  const grid3 = riskGrid(risks)
   const ink3 = cv('--ink3')
-  const grid = cv('--grid')
-  const panel = cv('--panel')
-  const gaugeCol = bandColorHex(avg)
+  const gridc = cv('--grid')
 
-  // ---- KPIs ----
-  const kUAT = fD.filter((x) => x.est === 'testing' || x.est === 'client').length
-  const kPRD = fD.filter((x) => x.est === 'go').length
-  const kpis = [
-    {
-      lab: 'Avance Global',
-      val: `${avg}%`,
-      color: gaugeCol,
-      modal: (): ModalData => ({
-        title: 'Avance global',
-        sub: pais === 'all' ? 'Portafolio completo' : countryName(pais),
-        rows: countries.map((c) => ({ k: c.name, v: `${avgOf(flat.filter((x) => x.f === c.code))}%` })),
-        note: 'Promedio del avance de todos los entregables del alcance.',
-      }),
-    },
-    {
-      lab: 'Entregables',
-      val: `${fD.length}`,
-      color: cv('--brand'),
-      modal: (): ModalData => ({
-        title: 'Entregables',
-        rows: [
-          { k: 'Total', v: `${fD.length}` },
-          { k: 'Sociedades', v: `${new Set(fD.map((x) => x.soc)).size}` },
-          { k: 'Tipos de reporte', v: data.project.report_types.map((r) => r.code).join(', ') },
-        ],
-      }),
-    },
-    {
-      lab: 'En pruebas UAT',
-      val: `${kUAT}`,
-      color: cv('--testc'),
-      modal: (): ModalData => ({
-        title: 'En pruebas integrales (UAT)',
-        rows: fD
-          .filter((x) => x.est === 'testing' || x.est === 'client')
-          .map((x) => ({ k: `${x.soc} · ${x.rep}`, v: `${x.pct}%` })),
-        note: 'Entregables liberados al cliente para pruebas integrales.',
-      }),
-    },
-    {
-      lab: 'En producción',
-      val: `${kPRD}`,
-      color: cv('--ok'),
-      modal: (): ModalData => ({
-        title: 'En producción',
-        rows: fD.filter((x) => x.est === 'go').map((x) => ({ k: `${x.soc} · ${x.rep}`, v: `${x.pct}%` })),
-      }),
-    },
-    {
-      lab: 'Riesgos',
-      val: `${criticalRisks}`,
-      color: cv('--coral'),
-      modal: (): ModalData => ({
-        title: 'Riesgos priorizados',
-        rows: risks.slice(0, 12).map((r) => ({ k: `${r.label} (${r.level})`, v: `P${r.probability}·I${r.impact}=${r.score}` })),
-        note: 'Generados automáticamente del detalle (avance, fechas, fase).',
-      }),
-    },
-  ]
+  // Países visibles (respeta filtro)
+  const paisCodes = (pais === 'all' ? countries.map((c) => c.code) : [pais]).filter((code) =>
+    flat.some((x) => x.f === code)
+  )
 
-  // ---- Velocímetro global ----
-  const gaugeOption = {
-    series: [
-      {
-        type: 'gauge',
-        startAngle: 210,
-        endAngle: -30,
-        min: 0,
-        max: 100,
-        progress: { show: true, width: 16, itemStyle: { color: gaugeCol } },
-        axisLine: { lineStyle: { width: 16, color: [[1, cv('--track')]] } },
-        axisTick: { show: false },
-        splitLine: { show: false },
-        axisLabel: { show: false },
-        pointer: { width: 5, length: '62%', itemStyle: { color: gaugeCol } },
-        anchor: { show: true, size: 14, itemStyle: { color: gaugeCol } },
-        detail: {
-          valueAnimation: true,
-          formatter: '{value}%',
-          fontSize: 32,
-          fontWeight: 800,
-          color: gaugeCol,
-          offsetCenter: [0, '42%'],
-        },
-        data: [{ value: avg }],
-      },
-    ],
-  }
-
-  // ---- Barras apiladas: país × estado ----
-  const estKeys = (['testing', 'go', 'client', 'proc', 'init'] as Status[]).filter((k) => counts[k] > 0)
-  const paisCodes = countries.map((c) => c.code)
-  const stackedOption = {
+  // ---- Avance por país (barras horizontales con relieve) ----
+  const paisAvg = paisCodes.map((code) => avgOf(flat.filter((x) => x.f === code)))
+  const avancePaisOption = {
+    grid: { left: 8, right: 40, top: 8, bottom: 8, containLabel: true },
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    legend: { textStyle: { color: ink3, fontSize: 10 }, top: 0, itemHeight: 8 },
-    grid: { left: 34, right: 12, top: 34, bottom: 24 },
-    xAxis: { type: 'category', data: paisCodes.map(countryShort), axisLabel: { color: ink3, fontSize: 10 } },
-    yAxis: { type: 'value', axisLabel: { color: ink3 }, splitLine: { lineStyle: { color: grid } } },
-    series: estKeys.map((k) => ({
-      name: EST[k].label,
-      type: 'bar',
-      stack: 'x',
-      emphasis: { focus: 'series' },
-      itemStyle: { color: cv(EST[k].cssVar) },
-      data: paisCodes.map((code) => flat.filter((x) => x.f === code && x.est === k).length),
-    })),
-  }
-
-  // ---- Barras 3D: avance por país ----
-  const bar3dOption = {
-    tooltip: {},
-    visualMap: {
-      show: false,
-      min: 0,
-      max: 100,
-      dimension: 2,
-      inRange: { color: ['#FB923C', '#FBBF24', '#34D399'] },
-    },
-    xAxis3D: { type: 'category', data: paisCodes.map(countryShort), axisLabel: { color: ink3 } },
-    yAxis3D: { type: 'category', data: ['Avance'], axisLabel: { show: false } },
-    zAxis3D: { type: 'value', max: 100, axisLabel: { color: ink3 } },
-    grid3D: {
-      boxWidth: 110,
-      boxDepth: 18,
-      boxHeight: 70,
-      viewControl: { alpha: 18, beta: 20, distance: 190, autoRotate: false },
-      light: { main: { intensity: 1.3, shadow: true }, ambient: { intensity: 0.35 } },
-      axisLine: { lineStyle: { color: ink3 } },
-      splitLine: { lineStyle: { color: grid } },
-    },
+    xAxis: { type: 'value', max: 100, axisLabel: { color: ink3, formatter: '{value}%' }, splitLine: { lineStyle: { color: gridc } } },
+    yAxis: { type: 'category', data: paisCodes.map(countryShort), axisLabel: { color: cv('--ink2'), fontWeight: 600 } },
     series: [
       {
-        type: 'bar3D',
-        shading: 'lambert',
-        bevelSize: 0.25,
-        data: paisCodes.map((code, i) => ({ value: [i, 0, avgOf(flat.filter((x) => x.f === code))] })),
-        itemStyle: { opacity: 0.92 },
-        emphasis: { itemStyle: { opacity: 1 } },
-      },
-    ],
-  }
-
-  // ---- Matriz de riesgos (scatter prob × impacto) ----
-  const riskOption = {
-    tooltip: {
-      formatter: (p: any) => `${p.data.name}<br/>Prob ${p.value[0]} · Impacto ${p.value[1]} · Puntaje ${p.value[2]}`,
-    },
-    grid: { left: 42, right: 18, top: 16, bottom: 40 },
-    xAxis: {
-      type: 'value',
-      name: 'Probabilidad',
-      nameLocation: 'middle',
-      nameGap: 26,
-      min: 0.5,
-      max: 5.5,
-      interval: 1,
-      axisLabel: { color: ink3 },
-      splitLine: { lineStyle: { color: grid } },
-    },
-    yAxis: {
-      type: 'value',
-      name: 'Impacto',
-      nameLocation: 'middle',
-      nameGap: 28,
-      min: 0.5,
-      max: 5.5,
-      interval: 1,
-      axisLabel: { color: ink3 },
-      splitLine: { lineStyle: { color: grid } },
-    },
-    series: [
-      {
-        type: 'scatter',
-        symbolSize: (d: number[]) => 14 + d[2] * 1.7,
-        data: risks.map((r) => ({
-          value: [r.probability, r.impact, r.score],
-          name: r.label,
-          itemStyle: { color: LEVEL_COLOR[r.level], opacity: 0.85, shadowBlur: 8, shadowColor: 'rgba(0,0,0,.3)' },
+        type: 'bar',
+        data: paisAvg.map((v) => ({
+          value: v,
+          itemStyle: {
+            borderRadius: [0, 8, 8, 0],
+            color: grad(bandColorHex(Math.max(0, v - 20)), bandColorHex(v)),
+            shadowBlur: 10,
+            shadowColor: 'rgba(0,0,0,.25)',
+            shadowOffsetY: 3,
+          },
         })),
+        barWidth: '58%',
+        label: { show: true, position: 'right', color: cv('--ink'), fontWeight: 700, formatter: '{c}%' },
       },
     ],
+  }
+
+  // ---- Composición por estado (dona con total al centro) ----
+  const estKeys = (['testing', 'go', 'client', 'proc', 'init'] as Status[]).filter((k) => counts[k] > 0)
+  const donutOption = {
+    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+    series: [
+      {
+        type: 'pie',
+        radius: ['58%', '82%'],
+        avoidLabelOverlap: false,
+        itemStyle: { borderColor: cv('--panel'), borderWidth: 3, shadowBlur: 8, shadowColor: 'rgba(0,0,0,.2)' },
+        label: { show: false },
+        data: estKeys.map((k) => ({ name: EST[k].label, value: counts[k], itemStyle: { color: cv(EST[k].cssVar) } })),
+      },
+    ],
+    graphic: {
+      type: 'text',
+      left: 'center',
+      top: 'center',
+      style: { text: `${fD.length}\nentregables`, textAlign: 'center', fill: cv('--ink'), fontSize: 18, fontWeight: 800, lineHeight: 20 },
+    },
   }
 
   // ---- Embudo por fase ----
@@ -296,23 +168,20 @@ export default function ReportView({ projectId, canEdit }: { projectId: string; 
     series: [
       {
         type: 'funnel',
-        left: '4%',
-        right: '4%',
-        top: 8,
-        bottom: 8,
-        minSize: '18%',
-        maxSize: '100%',
+        left: '2%',
+        right: '2%',
+        top: 6,
+        bottom: 6,
+        minSize: '20%',
         sort: 'descending',
         gap: 2,
         label: { show: true, position: 'inside', color: '#fff', fontSize: 10, formatter: '{b}' },
-        itemStyle: { borderColor: panel, borderWidth: 1 },
-        emphasis: { label: { fontWeight: 700 } },
+        itemStyle: { borderColor: cv('--panel'), borderWidth: 1, shadowBlur: 6, shadowColor: 'rgba(0,0,0,.2)' },
         data: phases.map((p, i) => ({ name: p.name, value: fCounts[i] })),
       },
     ],
   }
 
-  // ---- Handlers de clic ----
   const onPaisBarClick = (p: any) => {
     const code = paisCodes[p.dataIndex]
     if (!code) return
@@ -321,22 +190,6 @@ export default function ReportView({ projectId, canEdit }: { projectId: string; 
       title: countryName(code),
       sub: `${new Set(list.map((x) => x.soc)).size} sociedades · ${list.length} entregables`,
       rows: socList(list).map((s) => ({ k: s.soc, v: `${s.pct}% · ${EST[s.est].label}` })),
-    })
-  }
-  const onRiskClick = (p: any) => {
-    const r = risks[p.dataIndex]
-    if (!r) return
-    setModal({
-      title: r.label,
-      sub: `Riesgo ${r.level} · puntaje ${r.score}`,
-      rows: [
-        { k: 'País', v: countryName(r.pais) },
-        { k: 'Probabilidad', v: `${r.probability} / 5` },
-        { k: 'Impacto', v: `${r.impact} / 5` },
-        { k: 'Puntaje', v: `${r.score} / 25` },
-        { k: 'Motivo', v: r.reason },
-      ],
-      note: 'Riesgo calculado automáticamente del detalle del proyecto.',
     })
   }
   const onFunnelClick = (p: any) => {
@@ -352,10 +205,17 @@ export default function ReportView({ projectId, canEdit }: { projectId: string; 
 
   return (
     <div className={styles.wrap} key={themeTick}>
+      {/* Marca */}
+      <div className={styles.brandRow}>
+        <Logo url={settings?.innoteam_logo_url} name="InnoTeam" kind="innoteam" height={28} />
+        <span className={styles.brandX}>×</span>
+        <Logo url={data.project.client_logo_url} name={data.project.name} kind="client" color={data.project.brand_color} height={28} />
+      </div>
+
       <div className={styles.rhead}>
         <div className={styles.rtitle}>
           <h1>{data.project.name}</h1>
-          <p>{data.project.subtitle || 'Reporte de seguimiento'} · Reporte ejecutivo</p>
+          <p>{data.project.subtitle || 'Reporte de seguimiento'} · Estado ejecutivo</p>
         </div>
         <div className={styles.ractions}>
           <Link href={`/dashboard/projects/${projectId}`} className={styles.btn}>
@@ -372,11 +232,11 @@ export default function ReportView({ projectId, canEdit }: { projectId: string; 
         </div>
       </div>
 
-      {/* Filtros por país */}
+      {/* Filtro país */}
       <div className={styles.filterbar}>
         <span className={styles.flabel}>País</span>
         <span className={`${styles.chip} ${pais === 'all' ? styles.chipActive : ''}`} onClick={reset}>
-          Todos <span className={styles.n}>{flat.length}</span>
+          Todos
         </span>
         {countries.map((c) => (
           <span
@@ -384,105 +244,164 @@ export default function ReportView({ projectId, canEdit }: { projectId: string; 
             className={`${styles.chip} ${pais === c.code ? styles.chipActive : ''}`}
             onClick={() => setPais((p) => (p === c.code ? 'all' : c.code))}
           >
-            {countryShort(c.code)} <span className={styles.n}>{flat.filter((x) => x.f === c.code).length}</span>
+            {countryShort(c.code)}
           </span>
         ))}
-        {(pais !== 'all' || estado !== 'all') && (
-          <button className={styles.freset} onClick={reset}>
-            limpiar
-          </button>
-        )}
       </div>
 
-      {/* KPIs */}
-      <div className={styles.kpis}>
-        {kpis.map((k) => (
-          <div key={k.lab} className={`${styles.kpi} ${styles.clickable}`} onClick={() => setModal(k.modal())}>
-            <span className={styles.flt}>ver</span>
-            <div className="lab">{k.lab}</div>
-            <div className="val" style={{ color: k.color }}>
-              {k.val}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Velocímetro + Barras apiladas */}
-      <div className={`${styles.grid} ${styles.g2}`} style={{ marginTop: 14 }}>
-        <div className={styles.card}>
-          <div className={styles.chead}>
-            <div>
-              <h2>Avance global</h2>
-              <p className={styles.csub}>
-                {pais === 'all' ? 'Portafolio completo' : countryName(pais)} · {fD.length} entregables
-              </p>
-            </div>
-            <span className={styles.chartHint}>clic en tarjetas ↑</span>
-          </div>
-          <ReactECharts option={gaugeOption} style={{ height: 240 }} notMerge />
+      {/* Semáforo de estado */}
+      <div className={styles.health} style={{ borderColor: `${health.color}66` }}>
+        <div className={styles.healthDot} style={{ background: `${health.color}22`, color: health.color }}>
+          {health.level === 'En marcha' ? '✓' : health.level === 'En riesgo' ? '!' : '‼'}
         </div>
-        <div className={styles.card}>
-          <div className={styles.chead}>
-            <div>
-              <h2>Entregables por país y estado</h2>
-              <p className={styles.csub}>Barras apiladas · clic en una barra</p>
-            </div>
+        <div className={styles.healthMain}>
+          <div className="lvl" style={{ color: health.color }}>
+            {health.level}
           </div>
-          <ReactECharts
-            option={stackedOption}
-            style={{ height: 240 }}
-            notMerge
-            onEvents={{ click: onPaisBarClick }}
-          />
+          <div className="msg">{health.message}</div>
         </div>
       </div>
 
-      {/* Barras 3D + Matriz de riesgos */}
+      {/* Avance por país + Composición por estado */}
       <div className={`${styles.grid} ${styles.g2}`}>
         <div className={styles.card}>
           <div className={styles.chead}>
             <div>
-              <h2>Avance por país (3D)</h2>
-              <p className={styles.csub}>Vista tridimensional · gira con el mouse</p>
+              <h2>Avance por país</h2>
+              <p className={styles.cap}>
+                <b>Qué muestra:</b> qué tan avanzado está cada país. Clic en una barra para ver sus sociedades.
+              </p>
             </div>
           </div>
-          <ReactECharts option={bar3dOption} style={{ height: 300 }} notMerge />
+          <ReactECharts option={avancePaisOption} style={{ height: Math.max(180, paisCodes.length * 46) }} notMerge onEvents={{ click: onPaisBarClick }} />
         </div>
         <div className={styles.card}>
           <div className={styles.chead}>
             <div>
-              <h2>Matriz de riesgos</h2>
-              <p className={styles.csub}>Automática · probabilidad × impacto · clic en un punto</p>
+              <h2>Composición por estado</h2>
+              <p className={styles.cap}>
+                <b>Qué muestra:</b> en qué etapa están los entregables (inicial, elaboración, UAT, producción).
+              </p>
             </div>
-            <span className={styles.badge}>{risks.length} riesgos</span>
           </div>
-          <ReactECharts option={riskOption} style={{ height: 260 }} notMerge onEvents={{ click: onRiskClick }} />
-          <div className={styles.riskLegend}>
-            {(['Crítico', 'Alto', 'Medio', 'Bajo'] as const).map((l) => (
-              <span key={l}>
-                <i style={{ background: LEVEL_COLOR[l] }} /> {l}
-              </span>
+          <ReactECharts option={donutOption} style={{ height: 240 }} notMerge />
+          <div className={styles.legend}>
+            {estKeys.map((k) => (
+              <div className="li" key={k}>
+                <span className="sw" style={{ background: cv(EST[k].cssVar) }} />
+                {EST[k].label}
+                <b>{counts[k]}</b>
+              </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Embudo + Próximos pasos */}
+      {/* Embudo + Riesgos */}
       <div className={`${styles.grid} ${styles.g2}`}>
         <div className={styles.card}>
           <div className={styles.chead}>
             <div>
-              <h2>Embudo por fase</h2>
-              <p className={styles.csub}>Entregables que alcanzaron cada fase · clic para detalle</p>
+              <h2>Avance por fase (embudo)</h2>
+              <p className={styles.cap}>
+                <b>Qué muestra:</b> cuántos entregables han pasado cada fase de la metodología. Clic para el detalle.
+              </p>
             </div>
           </div>
-          <ReactECharts option={funnelOption} style={{ height: 340 }} notMerge onEvents={{ click: onFunnelClick }} />
+          <ReactECharts option={funnelOption} style={{ height: 320 }} notMerge onEvents={{ click: onFunnelClick }} />
         </div>
         <div className={styles.card}>
           <div className={styles.chead}>
             <div>
-              <h2>Próximos pasos</h2>
-              <p className={styles.csub}>Acciones priorizadas</p>
+              <h2>Riesgos priorizados</h2>
+              <p className={styles.cap}>
+                <b>Qué muestra:</b> los frentes que requieren atención (probabilidad × impacto). Generado del avance y las fechas.
+              </p>
+            </div>
+            <span className={styles.badge}>{risks.length}</span>
+          </div>
+          {risks.length === 0 ? (
+            <div className={styles.okState}>✓ Sin riesgos relevantes en este filtro.</div>
+          ) : (
+            <div className={styles.riskList}>
+              {risks.slice(0, 5).map((r) => (
+                <div className={styles.riskItem} key={r.key}>
+                  <span className={styles.rdot} style={{ background: LEVEL_COLOR[r.level] }} />
+                  <div>
+                    <div className={styles.rlabel}>{r.label}</div>
+                    <div className={styles.rreason}>
+                      {countryShort(r.pais)} · {r.reason}
+                    </div>
+                  </div>
+                  <span className={styles.rscore} style={{ background: `${LEVEL_COLOR[r.level]}22`, color: LEVEL_COLOR[r.level] }}>
+                    {r.level} · {r.score}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Mini-matriz 3x3 */}
+          <div className={styles.rgrid}>
+            {grid3.flatMap((row, ri) => [
+              <div className={styles.axisY} key={`y${ri}`}>
+                {row[0].impactBand}
+              </div>,
+              ...row.map((cell, ci) => (
+                <div className={styles.cell} key={`${ri}-${ci}`} style={{ background: cell.color }}>
+                  {cell.count || ''}
+                </div>
+              )),
+            ])}
+          </div>
+          <div className={styles.rgridFoot}>
+            <div />
+            <div className="cellLabel" style={{ fontSize: 9, color: 'var(--ink3)', textAlign: 'center' }}>
+              Prob. baja
+            </div>
+            <div className="cellLabel" style={{ fontSize: 9, color: 'var(--ink3)', textAlign: 'center' }}>
+              media
+            </div>
+            <div className="cellLabel" style={{ fontSize: 9, color: 'var(--ink3)', textAlign: 'center' }}>
+              alta
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Fechas en riesgo + Plan de acción */}
+      <div className={`${styles.grid} ${styles.g2}`}>
+        <div className={styles.card}>
+          <div className={styles.chead}>
+            <div>
+              <h2>Fechas en riesgo</h2>
+              <p className={styles.cap}>
+                <b>Qué muestra:</b> entregables con una fecha de fase ya vencida sin completar (cómo vamos vs. plan).
+              </p>
+            </div>
+            <span className={styles.badge}>{overdue.length}</span>
+          </div>
+          {overdue.length === 0 ? (
+            <div className={styles.okState}>✓ Sin fechas vencidas.</div>
+          ) : (
+            <div className={styles.overdue}>
+              {overdue.slice(0, 10).map((o, i) => (
+                <div className={styles.overdueItem} key={i}>
+                  <span>
+                    {o.label} — {o.phase}
+                  </span>
+                  <span className="od">{o.date}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className={styles.card}>
+          <div className={styles.chead}>
+            <div>
+              <h2>Plan de acción</h2>
+              <p className={styles.cap}>
+                <b>Qué muestra:</b> los próximos pasos comprometidos con responsable y fecha.
+              </p>
             </div>
           </div>
           <div className={styles.steps}>
@@ -508,14 +427,16 @@ export default function ReportView({ projectId, canEdit }: { projectId: string; 
         <div className={styles.chead}>
           <div>
             <h2>Sociedades por país</h2>
-            <p className={styles.csub}>Clic en una sociedad para su detalle</p>
+            <p className={styles.cap}>
+              <b>Qué muestra:</b> el avance de cada sociedad. Clic en una para ver sus reportes (BG/DRE/FF).
+            </p>
           </div>
         </div>
         <div className={styles.tree}>
           {countries
             .filter((c) => pais === 'all' || c.code === pais)
             .map((c) => {
-              const socs = societies.filter((s) => s.f === c.code)
+              const socs = socList(flat.filter((x) => x.f === c.code))
               return (
                 <div className={styles.treeCol} key={c.code}>
                   <div className={styles.treeHead}>
@@ -552,7 +473,6 @@ export default function ReportView({ projectId, canEdit }: { projectId: string; 
         </div>
       </div>
 
-      {/* Modal */}
       {modal && (
         <div className={styles.modalOverlay} onClick={() => setModal(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>

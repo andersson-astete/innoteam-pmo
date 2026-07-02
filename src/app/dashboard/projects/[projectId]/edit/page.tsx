@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { getCurrentUser } from '@/lib/auth'
 
-const EditGrid = dynamic(() => import('@/components/report/EditGrid'), { ssr: false })
+const PhaseBoard = dynamic(() => import('@/components/report/PhaseBoard'), { ssr: false })
 
 export default function EditProjectPage() {
   const params = useParams()
@@ -27,5 +27,5 @@ export default function EditProjectPage() {
   }, [projectId, router])
 
   if (!allowed) return null
-  return <EditGrid projectId={projectId} />
+  return <PhaseBoard projectId={projectId} />
 }
