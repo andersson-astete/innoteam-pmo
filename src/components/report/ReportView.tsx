@@ -604,7 +604,7 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
                             <td>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <div style={{ width: '50px', height: '6px', background: '#e2e8f0', borderRadius: '3px' }}>
-                                  <div style={{ height: '100%', width: \`\${item.pct}%\`, background: statusColor, borderRadius: '3px' }} />
+                                  <div style={{ height: '100%', width: `${item.pct}%`, background: statusColor, borderRadius: '3px' }} />
                                 </div>
                                 <span style={{ fontSize: '0.75rem', fontWeight: 700, color: statusColor }}>{item.pct}%</span>
                               </div>
