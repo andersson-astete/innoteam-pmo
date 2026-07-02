@@ -5,7 +5,7 @@ import { getDeliverables, EST } from '@/lib/mockData'
 import styles from './deliverables.module.css'
 
 export default function DeliverablesPage() {
-  const [deliverables, setDeliverables] = useState(getDeliverables())
+  const [deliverables] = useState(getDeliverables())
   const [filterStatus, setFilterStatus] = useState<string | null>(null)
 
   const filtered = filterStatus ? deliverables.filter(d => d.est === filterStatus) : deliverables
