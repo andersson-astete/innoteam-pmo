@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-
 import ReactECharts from 'echarts-for-react'
 import * as echarts from 'echarts'
 import {
@@ -27,13 +26,34 @@ const pmoStyles = `
     background: white;
     padding: 1.5rem 2rem;
     box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     position: sticky;
     top: 0;
     z-index: 10;
   }
+
+  .pmo-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .pmo-project-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  .meta-item {
+    display: flex;
+    flex-direction: column;
+  }
+  .meta-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; font-weight: 700; }
+  .meta-value { font-size: 0.85rem; font-weight: 600; color: #0f172a; }
   
   .pmo-title h1 {
     font-size: 1.5rem;
@@ -58,22 +78,37 @@ const pmoStyles = `
 
   .pmo-grid-kpi {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1.5rem;
     margin-bottom: 2rem;
+  }
+  
+  @media (max-width: 1024px) {
+    .pmo-grid-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 640px) {
+    .pmo-grid-kpi { grid-template-columns: repeat(1, minmax(0, 1fr)); }
   }
 
   .pmo-card {
     background: #ffffff;
     border-radius: 16px;
     padding: 1.5rem;
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.03), 0 2px 4px -2px rgb(0 0 0 / 0.03);
     border: 1px solid #e2e8f0;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
   
-  .pmo-card:hover {
-    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+  .pmo-card.clickable {
+    cursor: pointer;
+  }
+  .pmo-card.clickable:hover {
+    box-shadow: 0 12px 20px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+    transform: translateY(-2px);
+    border-color: #cbd5e1;
   }
 
   .kpi-title {
@@ -100,6 +135,7 @@ const pmoStyles = `
     font-size: 0.875rem;
     font-weight: 600;
     color: #94a3b8;
+    margin-top: auto;
   }
 
   .pmo-section-title {
@@ -123,6 +159,7 @@ const pmoStyles = `
 
   .filter-group {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
     background: #f1f5f9;
     padding: 0.375rem;
@@ -141,15 +178,8 @@ const pmoStyles = `
     transition: all 0.2s ease;
   }
 
-  .filter-btn:hover {
-    color: #0f172a;
-  }
-
-  .filter-btn.active {
-    background: white;
-    color: #0f172a;
-    box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
-  }
+  .filter-btn:hover { color: #0f172a; }
+  .filter-btn.active { background: white; color: #0f172a; box-shadow: 0 1px 3px rgb(0 0 0 / 0.1); }
 
   .status-badge {
     display: inline-flex;
@@ -166,44 +196,64 @@ const pmoStyles = `
   .status-warn { background: #fef9c3; color: #854d0e; }
   .status-danger { background: #fee2e2; color: #991b1b; }
 
-  .action-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .action-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
+  /* Modal Styles */
+  .modal-backdrop {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 50;
+    display: flex; align-items: center; justify-content: center;
     padding: 1rem;
-    background: #f8fafc;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-  }
-
-  .action-date {
-    background: white;
-    padding: 0.5rem;
-    border-radius: 8px;
-    text-align: center;
-    min-width: 60px;
-    border: 1px solid #cbd5e1;
-    box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+    animation: fadeIn 0.2s ease-out;
   }
   
-  .action-date-month { font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: #64748b; }
-  .action-date-day { font-size: 1.125rem; font-weight: 800; color: #0f172a; line-height: 1; margin-top: 0.1rem; }
+  .modal-content {
+    background: white;
+    border-radius: 20px;
+    width: 100%; max-width: 800px; max-height: 85vh;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    display: flex; flex-direction: column;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+  }
+  
+  .modal-header {
+    padding: 1.5rem; border-bottom: 1px solid #e2e8f0;
+    display: flex; justify-content: space-between; align-items: center;
+    background: #f8fafc;
+  }
+  
+  .modal-header h2 { margin: 0; font-size: 1.25rem; font-weight: 800; color: #0f172a; }
+  
+  .modal-close {
+    background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;
+    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; transition: background 0.2s;
+  }
+  .modal-close:hover { background: #e2e8f0; color: #0f172a; }
+  
+  .modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+  }
 
-  .action-content h4 { margin: 0 0 0.25rem 0; font-size: 0.95rem; font-weight: 700; color: #0f172a; }
-  .action-content p { margin: 0; font-size: 0.8rem; color: #64748b; line-height: 1.4; }
-  .action-owner { display: inline-flex; align-items: center; gap: 0.35rem; margin-top: 0.5rem; font-size: 0.75rem; font-weight: 600; color: #1c3a91; background: #e0e7ff; padding: 0.2rem 0.6rem; border-radius: 6px; }
+  .data-table { width: 100%; border-collapse: collapse; text-align: left; }
+  .data-table th { padding: 0.75rem 1rem; background: #f1f5f9; color: #475569; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; }
+  .data-table td { padding: 1rem; border-bottom: 1px solid #f1f5f9; font-size: 0.875rem; color: #1e293b; }
+  .data-table tr:hover td { background: #f8fafc; }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
 `
 
-export default function ReportView({ projectId }: { projectId: string; canEdit: boolean }) {
+type ModalState = { isOpen: boolean; title: string; data: FlatDeliverable[] }
+
+export default function ReportView({ projectId }: { projectId: string }) {
   const [data, setData] = useState<ProjectData | null>(null)
   const [loading, setLoading] = useState(true)
   const [filterCountry, setFilterCountry] = useState('ALL')
+  const [modal, setModal] = useState<ModalState>({ isOpen: false, title: '', data: [] })
 
   useEffect(() => {
     let alive = true
@@ -218,7 +268,6 @@ export default function ReportView({ projectId }: { projectId: string; canEdit: 
 
   const flat = useMemo<FlatDeliverable[]>(() => (data ? flattenDeliverables(data) : []), [data])
   const countries = data?.countries || []
-  
   const fD = useMemo(() => flat.filter((d) => filterCountry === 'ALL' || d.f === filterCountry), [flat, filterCountry])
 
   if (loading) return <div style={{ padding: '4rem', textAlign: 'center', color: '#64748b', fontFamily: 'sans-serif' }}>Cargando Control Tower...</div>
@@ -227,8 +276,13 @@ export default function ReportView({ projectId }: { projectId: string; canEdit: 
   // --- PMO EXPERT METRICS CALCULATION ---
   const totalDeliverables = fD.length
   const overallProgress = totalDeliverables ? Math.round(avgOf(fD)) : 0
-  const approvedCount = fD.filter(d => d.pct >= 100).length
-  const criticalRiskCount = fD.filter(d => d.pct < 25).length
+  
+  const approvedDeliverables = fD.filter(d => d.pct >= 100)
+  const approvedCount = approvedDeliverables.length
+  
+  const criticalDeliverables = fD.filter(d => d.pct < 25)
+  const criticalRiskCount = criticalDeliverables.length
+  
   const totalSocieties = data.societies.length
 
   // Health logic
@@ -239,43 +293,63 @@ export default function ReportView({ projectId }: { projectId: string; canEdit: 
 
   // Phase calculation
   const phaseNames = ['Planificación', 'Diseño BBP', 'Desarrollo EF', 'Pruebas UAT', 'Go-Live']
-  const phaseCounts = [
-    fD.filter(d => d.pct < 25).length,
-    fD.filter(d => d.pct >= 25 && d.pct < 50).length,
-    fD.filter(d => d.pct >= 50 && d.pct < 75).length,
-    fD.filter(d => d.pct >= 75 && d.pct < 100).length,
-    approvedCount
+  const phaseData = [
+    fD.filter(d => d.pct < 25),
+    fD.filter(d => d.pct >= 25 && d.pct < 50),
+    fD.filter(d => d.pct >= 50 && d.pct < 75),
+    fD.filter(d => d.pct >= 75 && d.pct < 100),
+    approvedDeliverables
   ]
+  const phaseCounts = phaseData.map(arr => arr.length)
   const maxPhaseIndex = phaseCounts.indexOf(Math.max(...phaseCounts))
   const bottleneckPhase = phaseNames[maxPhaseIndex] || 'N/A'
+  const bottleneckData = phaseData[maxPhaseIndex] || []
+
+  // Status Distribution
+  const statusLabels = { 'init': 'Inicio', 'proc': 'Proceso', 'testing': 'Pruebas', 'client': 'Aprob. Cliente', 'go': 'Go-Live' }
+  const statusCounts = fD.reduce((acc, curr) => {
+    acc[curr.est] = (acc[curr.est] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+  
+  const statusChartData = Object.entries(statusCounts).map(([key, val]) => ({
+    name: statusLabels[key as keyof typeof statusLabels] || key,
+    value: val
+  }))
+
+  // Top 5 Lowest Societies
+  const societyAvgs = data.societies.map(soc => {
+    const sData = flat.filter(x => x.society_id === soc.id)
+    return { name: soc.name, avg: sData.length ? Math.round(avgOf(sData)) : 0, count: sData.length }
+  }).filter(s => s.count > 0).sort((a, b) => a.avg - b.avg).slice(0, 5)
 
   // --- ECHARTS CONFIGURATION ---
 
-  // 1. Phase-Gates Roadmap (Replaces Funnel)
   const chartRoadmapOption = {
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
     grid: { left: '3%', right: '4%', bottom: '5%', top: '15%', containLabel: true },
     xAxis: { type: 'category', data: phaseNames, axisLine: { lineStyle: { color: '#cbd5e1' } }, axisLabel: { color: '#475569', fontWeight: 'bold' } },
     yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f1f5f9', type: 'dashed' } } },
-    series: [
-      {
-        name: 'Entregables en Fase',
-        type: 'bar',
-        barWidth: '45%',
-        itemStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: '#0ea5e9' },
-            { offset: 1, color: '#1c3a91' }
-          ]),
-          borderRadius: [6, 6, 0, 0]
-        },
-        data: phaseCounts,
-        label: { show: true, position: 'top', color: '#0f172a', fontWeight: 'bold', fontSize: 14 }
-      }
-    ]
+    series: [{
+      name: 'Entregables en Fase', type: 'bar', barWidth: '45%',
+      itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#0ea5e9' }, { offset: 1, color: '#1c3a91' }]), borderRadius: [6, 6, 0, 0] },
+      data: phaseCounts, label: { show: true, position: 'top', color: '#0f172a', fontWeight: 'bold', fontSize: 14 }
+    }]
   }
 
-  // 2. Geographic Performance (Clean Bar)
+  const chartStatusOption = {
+    tooltip: { trigger: 'item' },
+    legend: { bottom: '0%', icon: 'circle', itemWidth: 10, textStyle: { color: '#64748b', fontWeight: 'bold', fontSize: 11 } },
+    series: [{
+      name: 'Estado', type: 'pie', radius: ['40%', '70%'], center: ['50%', '45%'],
+      avoidLabelOverlap: false,
+      itemStyle: { borderRadius: 8, borderColor: '#fff', borderWidth: 2 },
+      label: { show: false },
+      color: ['#94a3b8', '#3b82f6', '#f59e0b', '#10b981', '#009036'],
+      data: statusChartData
+    }]
+  }
+
   const countryCodes = filterCountry === 'ALL' ? countries.map(c => c.code) : [filterCountry]
   const cAvgs = countryCodes.map(code => {
     const cData = flat.filter(x => x.f === code)
@@ -287,21 +361,23 @@ export default function ReportView({ projectId }: { projectId: string; canEdit: 
     grid: { left: '3%', right: '10%', bottom: '5%', top: '5%', containLabel: true },
     xAxis: { type: 'value', max: 100, splitLine: { lineStyle: { color: '#f1f5f9' } } },
     yAxis: { type: 'category', data: countryCodes.map(c => countries.find(x => x.code === c)?.name || c), axisLabel: { color: '#475569', fontWeight: 'bold' } },
-    series: [
-      {
-        type: 'bar',
-        barWidth: 20,
-        itemStyle: {
-          color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
-            { offset: 0, color: '#8cc63f' },
-            { offset: 1, color: '#009036' }
-          ]),
-          borderRadius: [0, 8, 8, 0]
-        },
-        data: cAvgs,
-        label: { show: true, position: 'right', formatter: '{c}%', color: '#0f172a', fontWeight: 'bold' }
-      }
-    ]
+    series: [{
+      type: 'bar', barWidth: 16,
+      itemStyle: { color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [{ offset: 0, color: '#8cc63f' }, { offset: 1, color: '#009036' }]), borderRadius: [0, 8, 8, 0] },
+      data: cAvgs, label: { show: true, position: 'right', formatter: '{c}%', color: '#0f172a', fontWeight: 'bold' }
+    }]
+  }
+
+  const chartTopSocietiesOption = {
+    tooltip: { trigger: 'axis', formatter: '{b}: {c}%' },
+    grid: { left: '3%', right: '10%', bottom: '5%', top: '5%', containLabel: true },
+    xAxis: { type: 'value', max: 100, splitLine: { lineStyle: { color: '#f1f5f9' } } },
+    yAxis: { type: 'category', data: societyAvgs.map(s => s.name), axisLabel: { color: '#475569', fontWeight: 'bold', width: 100, overflow: 'truncate' } },
+    series: [{
+      type: 'bar', barWidth: 16,
+      itemStyle: { color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [{ offset: 0, color: '#fca5a5' }, { offset: 1, color: '#ef4444' }]), borderRadius: [0, 8, 8, 0] },
+      data: societyAvgs.map(s => s.avg), label: { show: true, position: 'right', formatter: '{c}%', color: '#0f172a', fontWeight: 'bold' }
+    }]
   }
 
   return (
@@ -309,33 +385,40 @@ export default function ReportView({ projectId }: { projectId: string; canEdit: 
       <style dangerouslySetInnerHTML={{ __html: pmoStyles }} />
       <div className="pmo-dashboard">
         
-        {/* Header */}
+        {/* Enriched Header */}
         <header className="pmo-header">
-          <div className="pmo-title">
-            <h1>{data.project.name}</h1>
-            <p>Control Tower · Estado Ejecutivo de Implementación</p>
+          <div className="pmo-header-top">
+            <div className="pmo-title">
+              <h1>{data.project.name}</h1>
+              <p>Control Tower · Estado Ejecutivo de Implementación</p>
+            </div>
+            
+            <div className="filter-group">
+              <button onClick={() => setFilterCountry('ALL')} className={`filter-btn ${filterCountry === 'ALL' ? 'active' : ''}`}>Global</button>
+              {countries.map(c => (
+                <button key={c.code} onClick={() => setFilterCountry(c.code)} className={`filter-btn ${filterCountry === c.code ? 'active' : ''}`}>
+                  {c.name}
+                </button>
+              ))}
+            </div>
           </div>
           
-          <div className="filter-group">
-            <button onClick={() => setFilterCountry('ALL')} className={`filter-btn ${filterCountry === 'ALL' ? 'active' : ''}`}>
-              Global
-            </button>
-            {countries.map(c => (
-              <button key={c.code} onClick={() => setFilterCountry(c.code)} className={`filter-btn ${filterCountry === c.code ? 'active' : ''}`}>
-                {c.name}
-              </button>
-            ))}
+          <div className="pmo-project-meta">
+            <div className="meta-item"><span className="meta-label">Sponsor</span><span className="meta-value">{data.project.sponsor || 'N/A'}</span></div>
+            <div className="meta-item"><span className="meta-label">Project Manager</span><span className="meta-value">{data.project.pm || 'N/A'}</span></div>
+            <div className="meta-item"><span className="meta-label">Líder Negocio</span><span className="meta-value">{data.project.user_lead || data.project.project_lead || 'N/A'}</span></div>
+            <div className="meta-item"><span className="meta-label">Fase Principal</span><span className="meta-value" style={{ textTransform: 'capitalize' }}>{data.project.stage || 'N/A'}</span></div>
           </div>
         </header>
 
         <main className="pmo-container">
           
-          {/* 6 PMO HEALTH SCORECARDS */}
+          {/* 6 PMO HEALTH SCORECARDS (BALANCED GRID 3 COLUMNS) */}
           <div className="pmo-grid-kpi">
-            <div className="pmo-card" style={{ borderTop: '4px solid #1c3a91' }}>
+            <div className="pmo-card clickable" style={{ borderTop: '4px solid #1c3a91' }} onClick={() => setModal({ isOpen: true, title: 'Avance Real Total', data: fD })}>
               <div className="kpi-title">Avance Real vs Plan</div>
               <div className="kpi-value">{overallProgress}%</div>
-              <div className="kpi-subtitle">Progreso consolidado</div>
+              <div className="kpi-subtitle">Progreso consolidado (Clic para detalle)</div>
               <div style={{ background: '#f1f5f9', height: '6px', borderRadius: '4px', marginTop: '1rem' }}>
                 <div style={{ background: '#1c3a91', height: '100%', width: `${overallProgress}%`, borderRadius: '4px' }} />
               </div>
@@ -349,22 +432,22 @@ export default function ReportView({ projectId }: { projectId: string; canEdit: 
               <div className="kpi-subtitle">Basado en retrasos críticos</div>
             </div>
 
-            <div className="pmo-card">
+            <div className="pmo-card clickable" onClick={() => setModal({ isOpen: true, title: 'Entregables Firmados / Aprobados', data: approvedDeliverables })}>
               <div className="kpi-title" style={{ color: '#009036' }}>Entregables Aprobados</div>
               <div className="kpi-value">{approvedCount} <span style={{ fontSize: '1rem', color: '#94a3b8' }}>/ {totalDeliverables}</span></div>
               <div className="kpi-subtitle">Documentos al 100% (Go-Live)</div>
             </div>
 
-            <div className="pmo-card">
+            <div className="pmo-card clickable" onClick={() => setModal({ isOpen: true, title: 'Frentes en Riesgo Crítico', data: criticalDeliverables })}>
               <div className="kpi-title" style={{ color: '#e31c1b' }}>Frentes en Riesgo</div>
               <div className="kpi-value">{criticalRiskCount}</div>
-              <div className="kpi-subtitle">Avance estancado &lt; 25%</div>
+              <div className="kpi-subtitle">Avance estancado &lt; 25% (Requiere Atención)</div>
             </div>
 
-            <div className="pmo-card">
+            <div className="pmo-card clickable" onClick={() => setModal({ isOpen: true, title: `Entregables en ${bottleneckPhase}`, data: bottleneckData })}>
               <div className="kpi-title">Cuello de Botella</div>
               <div className="kpi-value" style={{ fontSize: '1.5rem', marginTop: '0.5rem' }}>{bottleneckPhase}</div>
-              <div className="kpi-subtitle">Fase con más carga actual ({Math.max(...phaseCounts)} reqs)</div>
+              <div className="kpi-subtitle">Fase con mayor carga ({Math.max(...phaseCounts)} reqs)</div>
             </div>
 
             <div className="pmo-card">
@@ -376,18 +459,25 @@ export default function ReportView({ projectId }: { projectId: string; canEdit: 
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1.5rem' }}>
             
-            {/* Phase-Gates Roadmap */}
+            {/* 4 CHARTS */}
             <div className="pmo-card" style={{ gridColumn: 'span 8' }}>
               <h2 className="pmo-section-title">Roadmap de Fases (Phase-Gates)</h2>
-              <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1rem' }}>Volumen de entregables transitando por la metodología de implementación.</p>
-              <ReactECharts option={chartRoadmapOption} style={{ height: '320px' }} />
+              <ReactECharts option={chartRoadmapOption} style={{ height: '280px' }} />
             </div>
 
-            {/* Geographic Performance */}
             <div className="pmo-card" style={{ gridColumn: 'span 4' }}>
-              <h2 className="pmo-section-title">Desempeño Geográfico</h2>
-              <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1rem' }}>Avance global consolidado por país.</p>
-              <ReactECharts option={chartGeoOption} style={{ height: '320px' }} />
+              <h2 className="pmo-section-title">Distribución de Estados</h2>
+              <ReactECharts option={chartStatusOption} style={{ height: '280px' }} />
+            </div>
+
+            <div className="pmo-card" style={{ gridColumn: 'span 6' }}>
+              <h2 className="pmo-section-title">Desempeño Geográfico Global</h2>
+              <ReactECharts option={chartGeoOption} style={{ height: '280px' }} />
+            </div>
+
+            <div className="pmo-card" style={{ gridColumn: 'span 6' }}>
+              <h2 className="pmo-section-title">Top 5 Sociedades con Menor Avance</h2>
+              <ReactECharts option={chartTopSocietiesOption} style={{ height: '280px' }} />
             </div>
 
             {/* Action Plan */}
@@ -404,7 +494,6 @@ export default function ReportView({ projectId }: { projectId: string; canEdit: 
                   <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', fontSize: '0.875rem' }}>No hay acciones críticas registradas para el comité.</div>
                 ) : (
                   data.steps.map((s) => {
-                    // Extract a fake date just for beautiful UI, or use s.due
                     const due = s.due || 'Pronto'
                     const day = due.length > 2 ? due.substring(0,2) : due
                     const month = due.length > 3 ? due.substring(3,6) : 'MES'
@@ -432,6 +521,65 @@ export default function ReportView({ projectId }: { projectId: string; canEdit: 
 
           </div>
         </main>
+        
+        {/* DYNAMIC DRILL-DOWN MODAL */}
+        {modal.isOpen && (
+          <div className="modal-backdrop" onClick={() => setModal({ ...modal, isOpen: false })}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>{modal.title}</h2>
+                <button className="modal-close" onClick={() => setModal({ ...modal, isOpen: false })}>&times;</button>
+              </div>
+              <div className="modal-body">
+                {modal.data.length === 0 ? (
+                  <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>No hay datos para mostrar en esta vista.</div>
+                ) : (
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>País</th>
+                        <th>Sociedad</th>
+                        <th>Reporte</th>
+                        <th>Estado</th>
+                        <th>Avance</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {modal.data.map(item => {
+                        let statusColor = '#94a3b8'
+                        if (item.pct === 100) statusColor = '#16a34a'
+                        else if (item.pct < 25) statusColor = '#dc2626'
+                        else if (item.pct > 60) statusColor = '#2563eb'
+                        
+                        return (
+                          <tr key={item.id}>
+                            <td style={{ fontWeight: 600 }}>{item.f}</td>
+                            <td>{item.soc}</td>
+                            <td>{item.code || item.rep}</td>
+                            <td>
+                              <span style={{ fontSize: '0.75rem', fontWeight: 600, background: '#f1f5f9', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                                {item.est}
+                              </span>
+                            </td>
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <div style={{ width: '60px', height: '6px', background: '#e2e8f0', borderRadius: '3px' }}>
+                                  <div style={{ height: '100%', width: `${item.pct}%`, background: statusColor, borderRadius: '3px' }} />
+                                </div>
+                                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: statusColor }}>{item.pct}%</span>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        
       </div>
     </>
   )
