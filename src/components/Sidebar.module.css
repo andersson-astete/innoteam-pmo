@@ -1,0 +1,96 @@
+.sidebar {
+  width: 240px;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  padding: 16px 12px;
+  overflow-y: auto;
+  transition: all 0.3s;
+}
+
+.sidebar.closed {
+  width: 70px;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border-radius: 9px;
+  color: var(--ink2);
+  text-decoration: none;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.link:hover {
+  background: var(--sub);
+  color: var(--ink);
+  border-color: var(--line2);
+}
+
+.link.active {
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
+  font-weight: 600;
+}
+
+.icon {
+  font-size: 18px;
+  flex: none;
+  width: 20px;
+  text-align: center;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.sidebar.closed .label {
+  display: none;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: var(--line2);
+  border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--line);
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: absolute;
+    left: 0;
+    top: 70px;
+    height: calc(100vh - 70px);
+    z-index: 100;
+    box-shadow: var(--shadow);
+  }
+
+  .sidebar.closed {
+    width: 0;
+    padding: 0;
+    border: none;
+    overflow: hidden;
+  }
+}

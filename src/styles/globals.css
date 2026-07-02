@@ -1,0 +1,105 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Dark theme (default) */
+  --bg: #0A1020;
+  --panel: #131C31;
+  --panel2: #172136;
+  --sub: #0F1729;
+  --line: rgba(255, 255, 255, 0.08);
+  --line2: rgba(255, 255, 255, 0.14);
+  --ink: #EAF0FB;
+  --ink2: #A9B6D0;
+  --ink3: #6E7C99;
+  --brand: #2F6BD8;
+  --blue: #3B82F6;
+  --green: #7DBE3E;
+  --cyan: #38BDF8;
+  --violet: #8B7CF6;
+  --ok: #34D399;
+  --okbg: rgba(52, 211, 153, 0.14);
+  --warn: #FBBF24;
+  --warnbg: rgba(251, 191, 36, 0.14);
+  --coral: #FB923C;
+  --coralbg: rgba(251, 146, 60, 0.14);
+  --red: #F87171;
+  --redbg: rgba(248, 113, 113, 0.14);
+  --clientc: #38BDF8;
+  --clientbg: rgba(56, 189, 248, 0.14);
+  --testc: #A78BFA;
+  --testbg: rgba(167, 139, 250, 0.16);
+  --track: rgba(255, 255, 255, 0.09);
+  --shadow: 0 12px 30px -14px rgba(0, 0, 0, 0.65);
+  --grid: rgba(255, 255, 255, 0.07);
+}
+
+html.light {
+  --bg: #E9EFF7;
+  --panel: #FFFFFF;
+  --panel2: #FFFFFF;
+  --sub: #F3F7FC;
+  --line: rgba(16, 27, 46, 0.1);
+  --line2: rgba(16, 27, 46, 0.16);
+  --ink: #0F1B2E;
+  --ink2: #47566E;
+  --ink3: #7B899F;
+  --green: #5C9E27;
+  --ok: #16A34A;
+  --okbg: rgba(22, 163, 74, 0.12);
+  --warn: #C77A0A;
+  --warnbg: rgba(199, 122, 10, 0.13);
+  --coral: #E0620E;
+  --coralbg: rgba(224, 98, 14, 0.12);
+  --red: #DC2626;
+  --redbg: rgba(220, 38, 38, 0.11);
+  --clientc: #0E7FA8;
+  --clientbg: rgba(14, 127, 168, 0.12);
+  --testc: #7C3AED;
+  --testbg: rgba(124, 58, 237, 0.12);
+  --track: rgba(16, 27, 46, 0.09);
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 14px 34px -16px rgba(16, 24, 40, 0.2);
+  --grid: rgba(16, 27, 46, 0.09);
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  background: radial-gradient(1100px 640px at 82% -12%, rgba(59, 130, 246, 0.1) 0%, transparent 55%), var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', system-ui, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  transition: background 0.3s, color 0.3s;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
