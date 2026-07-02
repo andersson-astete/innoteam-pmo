@@ -15,6 +15,7 @@ const links = [
   { href: '/dashboard/alerts', label: 'Alertas', icon: '⚠' },
   { href: '/dashboard/actions', label: 'Acciones', icon: '→' },
   { href: '/dashboard/admin', label: 'Administración', icon: '⚙' },
+  { href: '/dashboard/admin/users', label: 'Usuarios', icon: '👥' },
 ]
 
 export default function Sidebar({ isOpen }: SidebarProps) {

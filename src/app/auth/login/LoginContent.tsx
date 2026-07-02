@@ -79,6 +79,17 @@ export default function LoginContent() {
         </form>
 
         <div className={styles.footer}>
+          <details style={{ marginBottom: '12px', fontSize: '11px', cursor: 'pointer' }}>
+            <summary style={{ fontWeight: '600', color: 'var(--ink3)', marginBottom: '8px' }}>
+              📝 Usuarios de Test
+            </summary>
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '8px', borderRadius: '4px', fontSize: '10px', fontFamily: 'monospace', lineHeight: '1.4' }}>
+              <div><strong>👁 Gerencia:</strong> gerencia@innoteam.com / Gerencia123!</div>
+              <div><strong>📊 PM:</strong> pm@innoteam.com / PM123!</div>
+              <div><strong>📋 Consultor:</strong> consultant@innoteam.com / Consultant123!</div>
+              <div><strong>🔧 Admin TI:</strong> admin@innoteam.com / Admin123!</div>
+            </div>
+          </details>
           <p>© 2026 InnoTeam. Todos los derechos reservados.</p>
         </div>
       </div>
