@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import ReactECharts from 'echarts-for-react'
+import * as echarts from 'echarts'
 import {
   getProjectData,
   getSettings,
@@ -264,7 +265,7 @@ export default function ReportView({ projectId, canEdit }: { projectId: string; 
         type: 'bar',
         barWidth: '45%',
         itemStyle: {
-          color: new ReactECharts.echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
             { offset: 0, color: '#0ea5e9' },
             { offset: 1, color: '#1c3a91' }
           ]),
@@ -293,7 +294,7 @@ export default function ReportView({ projectId, canEdit }: { projectId: string; 
         type: 'bar',
         barWidth: 20,
         itemStyle: {
-          color: new ReactECharts.echarts.graphic.LinearGradient(1, 0, 0, 0, [
+          color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
             { offset: 0, color: '#8cc63f' },
             { offset: 1, color: '#009036' }
           ]),
