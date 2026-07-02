@@ -9,11 +9,7 @@ interface SidebarProps {
 }
 
 const links = [
-  { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-  { href: '/dashboard/projects', label: 'Proyectos', icon: '📁' },
-  { href: '/dashboard/deliverables', label: 'Entregables', icon: '✓' },
-  { href: '/dashboard/alerts', label: 'Alertas', icon: '⚠' },
-  { href: '/dashboard/actions', label: 'Acciones', icon: '→' },
+  { href: '/dashboard', label: 'Proyectos', icon: '📁' },
   { href: '/dashboard/admin', label: 'Administración', icon: '⚙' },
   { href: '/dashboard/admin/users', label: 'Usuarios', icon: '👥' },
 ]
@@ -25,7 +21,10 @@ export default function Sidebar({ isOpen }: SidebarProps) {
     <aside className={`${styles.sidebar} ${isOpen ? styles.open : styles.closed}`}>
       <nav className={styles.nav}>
         {links.map((link) => {
-          const isActive = pathname === link.href || pathname.startsWith(link.href + '/')
+          const isRoot = link.href === '/dashboard'
+          const isActive = isRoot
+            ? pathname === '/dashboard' || pathname.startsWith('/dashboard/projects')
+            : pathname === link.href || pathname.startsWith(link.href + '/')
           return (
             <Link
               key={link.href}

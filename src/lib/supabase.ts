@@ -3,85 +3,165 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder'
 
-// Create client - will work only if credentials are set
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-export type Database = {
-  public: {
-    Tables: {
-      companies: {
-        Row: {
-          id: string
-          name: string
-          logo_url: string | null
-          brand_color: string
-          timezone: string
-          created_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['companies']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['companies']['Insert']>
-      }
-      projects: {
-        Row: {
-          id: string
-          company_id: string
-          name: string
-          type: 'sap' | 'odoo' | 'custom'
-          status: string
-          start_date: string
-          target_close_date: string
-          phase_weights: Record<string, number>
-          created_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['projects']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['projects']['Insert']>
-      }
-      deliverables: {
-        Row: {
-          id: string
-          project_id: string
-          society_name: string
-          country: string
-          report_type: 'BG' | 'DRE' | 'FF' | 'custom'
-          percentage: number
-          status: 'init' | 'proc' | 'testing' | 'go' | 'client'
-          last_phase_reached: number
-          created_at: string
-          updated_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['deliverables']['Row'], 'id' | 'created_at' | 'updated_at'>
-        Update: Partial<Database['public']['Tables']['deliverables']['Insert']>
-      }
-      alerts: {
-        Row: {
-          id: string
-          project_id: string
-          severity: 'baja' | 'media' | 'alta'
-          title: string
-          impact: string
-          action: string
-          owner: string
-          due_date: string
-          status: string
-          created_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['alerts']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['alerts']['Insert']>
-      }
-      action_items: {
-        Row: {
-          id: string
-          project_id: string
-          title: string
-          description: string
-          owner: string
-          due_date: string
-          status: 'pending' | 'in_progress' | 'done'
-          created_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['action_items']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['action_items']['Insert']>
-      }
-    }
+// ---------- Tipos del modelo real ----------
+export type Status = 'init' | 'proc' | 'testing' | 'go' | 'client'
+
+export interface Phase {
+  name: string
+  weight: number
+}
+export interface ReportType {
+  code: string
+  name: string
+}
+export interface Project {
+  id: string
+  name: string
+  subtitle: string | null
+  client_logo_url: string | null
+  brand_color: string
+  phases: Phase[]
+  report_types: ReportType[]
+  created_at: string
+  updated_at: string
+}
+export interface Country {
+  id: string
+  project_id: string
+  code: string
+  name: string
+  short_name: string | null
+  sort_order: number
+}
+export interface Society {
+  id: string
+  project_id: string
+  country_id: string
+  name: string
+  sort_order: number
+}
+export interface Deliverable {
+  id: string
+  society_id: string
+  report_code: string
+  last_phase: number
+  percentage: number
+  status: Status
+  observation: string | null
+  updated_at: string
+}
+export interface Alert {
+  id: string
+  project_id: string
+  country_code: string
+  severity: string
+  title: string
+  impact: string | null
+  action: string | null
+  owner: string | null
+  due: string | null
+  sort_order: number
+}
+export interface Step {
+  id: string
+  project_id: string
+  title: string
+  description: string | null
+  owner: string | null
+  due: string | null
+  sort_order: number
+}
+
+// Datos completos de un proyecto para armar el reporte
+export interface ProjectData {
+  project: Project
+  countries: Country[]
+  societies: Society[]
+  deliverables: Deliverable[]
+  alerts: Alert[]
+  steps: Step[]
+}
+
+// Fila plana de entregable enriquecida (país + sociedad) para los cálculos del reporte
+export interface FlatDeliverable {
+  id: string
+  society_id: string
+  soc: string // nombre sociedad
+  f: string // código país
+  rep: string // report_code
+  last: number
+  pct: number
+  est: Status
+  obs: string
+}
+
+// ---------- Lecturas ----------
+export async function getProjects(): Promise<Project[]> {
+  const { data, error } = await supabase
+    .from('projects')
+    .select('*')
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return (data || []) as Project[]
+}
+
+export async function getProject(id: string): Promise<Project | null> {
+  const { data, error } = await supabase.from('projects').select('*').eq('id', id).single()
+  if (error) return null
+  return data as Project
+}
+
+export async function getProjectData(projectId: string): Promise<ProjectData | null> {
+  const project = await getProject(projectId)
+  if (!project) return null
+
+  const [{ data: countries }, { data: societies }, { data: alerts }, { data: steps }] =
+    await Promise.all([
+      supabase.from('countries').select('*').eq('project_id', projectId).order('sort_order'),
+      supabase.from('societies').select('*').eq('project_id', projectId).order('sort_order'),
+      supabase.from('alerts').select('*').eq('project_id', projectId).order('sort_order'),
+      supabase.from('steps').select('*').eq('project_id', projectId).order('sort_order'),
+    ])
+
+  const socIds = (societies || []).map((s) => s.id)
+  let deliverables: Deliverable[] = []
+  if (socIds.length) {
+    const { data: dels } = await supabase
+      .from('deliverables')
+      .select('*')
+      .in('society_id', socIds)
+    deliverables = (dels || []) as Deliverable[]
   }
+
+  return {
+    project,
+    countries: (countries || []) as Country[],
+    societies: (societies || []) as Society[],
+    deliverables,
+    alerts: (alerts || []) as Alert[],
+    steps: (steps || []) as Step[],
+  }
+}
+
+// Aplana entregables + sociedad + país para alimentar los cálculos del reporte
+export function flattenDeliverables(data: ProjectData): FlatDeliverable[] {
+  const socById = new Map(data.societies.map((s) => [s.id, s]))
+  const countryById = new Map(data.countries.map((c) => [c.id, c]))
+  return data.deliverables.map((d) => {
+    const soc = socById.get(d.society_id)
+    const country = soc ? countryById.get(soc.country_id) : undefined
+    return {
+      id: d.id,
+      society_id: d.society_id,
+      soc: soc?.name || '—',
+      f: country?.code || '—',
+      rep: d.report_code,
+      last: d.last_phase,
+      pct: d.percentage,
+      est: d.status,
+      obs: d.observation || '',
+    }
+  })
 }

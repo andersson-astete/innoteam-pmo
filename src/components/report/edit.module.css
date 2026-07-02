@@ -1,0 +1,210 @@
+.wrap {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 8px 4px 60px;
+}
+.loading {
+  padding: 60px 0;
+  text-align: center;
+  color: var(--ink3);
+}
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.head h1 {
+  font-size: 22px;
+  font-weight: 800;
+}
+.head p {
+  font-size: 12px;
+  color: var(--ink3);
+  margin-top: 4px;
+}
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.saved {
+  font-size: 12px;
+  color: var(--ok);
+  font-weight: 600;
+}
+.btn {
+  border: 1px solid var(--line2);
+  background: var(--panel);
+  color: var(--ink);
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.btnSm {
+  border: 1px solid var(--line2);
+  background: var(--brand);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.btnDel {
+  border: 1px solid var(--line2);
+  background: var(--panel);
+  color: var(--coral);
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.sechead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 26px 2px 12px;
+}
+.sechead h2 {
+  font-size: 15px;
+  font-weight: 700;
+}
+.countryCard {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+.countryHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.countryName {
+  font-size: 14px;
+  font-weight: 700;
+}
+.code {
+  font-size: 10px;
+  color: var(--ink3);
+  border: 1px solid var(--line2);
+  padding: 1px 6px;
+  border-radius: 5px;
+  margin-left: 6px;
+}
+.empty {
+  font-size: 12px;
+  color: var(--ink3);
+  padding: 6px 2px;
+}
+.tableScroll {
+  overflow-x: auto;
+}
+.tableScroll table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.tableScroll thead th {
+  text-align: left;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--ink3);
+  font-weight: 600;
+  padding: 0 8px 8px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.tableScroll tbody td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.socCell {
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  border-right: 1px solid var(--line);
+  position: relative;
+}
+.rmSoc {
+  color: var(--coral);
+  font-size: 11px;
+  margin-left: 8px;
+  opacity: 0.6;
+}
+.rmSoc:hover {
+  opacity: 1;
+}
+.repCell {
+  font-weight: 700;
+  color: var(--ink2);
+}
+.sel,
+.num,
+.obs {
+  border: 1px solid var(--line2);
+  background: var(--bg);
+  color: var(--ink);
+  border-radius: 7px;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+.sel {
+  min-width: 130px;
+}
+.num {
+  width: 64px;
+  text-align: center;
+}
+.obs {
+  width: 100%;
+  min-width: 200px;
+}
+.itemCard {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.itemRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.itemTitle {
+  flex: 1;
+  min-width: 200px;
+  border: 1px solid var(--line2);
+  background: var(--bg);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.itemSub {
+  flex: 1;
+  min-width: 160px;
+  border: 1px solid var(--line2);
+  background: var(--bg);
+  color: var(--ink2);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 12px;
+}

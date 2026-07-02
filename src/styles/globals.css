@@ -103,3 +103,21 @@ select {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
 }
+
+/* Impresión / exportar PDF: ocultar el chrome de la app, mostrar solo el reporte */
+@media print {
+  header,
+  aside {
+    display: none !important;
+  }
+  main {
+    overflow: visible !important;
+    height: auto !important;
+  }
+  body {
+    background: #fff !important;
+  }
+  @page {
+    margin: 12mm;
+  }
+}
