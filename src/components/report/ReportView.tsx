@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import ReactECharts from 'echarts-for-react'
 import {
@@ -10,61 +10,36 @@ import {
   type ProjectData,
   type Settings,
   type FlatDeliverable,
-  type Status,
 } from '@/lib/supabase'
 import {
-  EST,
   avgOf,
-  bandColorHex,
-  socList,
   estCounts,
-  phaseCounts,
-  buildRiskMatrix,
-  projectHealth,
-  riskGrid,
-  overdueItems,
 } from '@/lib/report'
-import { Logo } from './Logo'
-import styles from './report.module.css'
 
-function cv(name: string, fallback = '#888'): string {
-  if (typeof window === 'undefined') return fallback
-  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
-  return v || fallback
-}
-const LEVEL_COLOR = { Crítico: '#F87171', Alto: '#FB923C', Medio: '#FBBF24', Bajo: '#34D399' } as const
-
-// Degradado para dar relieve a las barras (no planas)
-const grad = (from: string, to: string) => ({
-  type: 'linear',
-  x: 0,
-  y: 0,
-  x2: 1,
-  y2: 0,
-  colorStops: [
-    { offset: 0, color: from },
-    { offset: 1, color: to },
-  ],
-})
-
-interface ModalData {
-  title: string
-  sub?: string
-  rows: { k: string; v: string }[]
-  note?: string
-}
+// Custom CSS for the Executive Dashboard
+const dashboardStyles = `
+  .exec-dashboard { font-family: 'Inter', sans-serif; background: #f8f9fa; color: #1e293b; min-height: 100vh; padding-bottom: 2rem; }
+  .exec-card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); border: 1px solid #e2e8f0; }
+  .exec-kpi-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; font-weight: 700; margin-bottom: 0.5rem; }
+  .exec-kpi-value { font-size: 2.25rem; font-weight: 800; color: #0f172a; line-height: 1.2; }
+  .exec-kpi-subtitle { font-size: 0.875rem; color: #64748b; font-weight: 500; padding-bottom: 0.25rem; }
+  .exec-kpi-desc { font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-top: 0.75rem; }
+  .exec-filter-btn { padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; transition: all 0.2s; border: 1px solid #cbd5e1; color: #475569; background: white; cursor: pointer; }
+  .exec-filter-btn.active { background: #1c3a91; color: white; border-color: #1c3a91; box-shadow: 0 2px 8px rgba(28, 58, 145, 0.3); }
+  .exec-filter-btn:hover:not(.active) { background: #f1f5f9; }
+  .exec-action-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+  .exec-action-item:last-child { border-bottom: none; }
+  .exec-action-num { width: 24px; height: 24px; border-radius: 50%; background: #f1f5f9; color: #64748b; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; }
+`
 
 export default function ReportView({ projectId, canEdit }: { projectId: string; canEdit: boolean }) {
   const [data, setData] = useState<ProjectData | null>(null)
   const [settings, setSettings] = useState<Settings | null>(null)
   const [loading, setLoading] = useState(true)
-  const [pais, setPais] = useState('all')
-  const [themeTick, setThemeTick] = useState(0)
-  const [modal, setModal] = useState<ModalData | null>(null)
+  const [filterCountry, setFilterCountry] = useState('ALL')
 
   useEffect(() => {
     let alive = true
-    setLoading(true)
     Promise.all([getProjectData(projectId), getSettings()]).then(([d, s]) => {
       if (alive) {
         setData(d)
@@ -72,433 +47,226 @@ export default function ReportView({ projectId, canEdit }: { projectId: string; 
         setLoading(false)
       }
     })
-    return () => {
-      alive = false
-    }
+    return () => { alive = false }
   }, [projectId])
-
-  useEffect(() => {
-    const obs = new MutationObserver(() => setThemeTick((t) => t + 1))
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-    return () => obs.disconnect()
-  }, [])
 
   const flat = useMemo<FlatDeliverable[]>(() => (data ? flattenDeliverables(data) : []), [data])
   const countries = data?.countries || []
   const phases = data?.project.phases || []
 
-  // Filtro único por país — TODOS los gráficos usan fD
-  const fD = useMemo(() => flat.filter((d) => pais === 'all' || d.f === pais), [flat, pais])
-  const reset = useCallback(() => setPais('all'), [])
+  const fD = useMemo(() => flat.filter((d) => filterCountry === 'ALL' || d.f === filterCountry), [flat, filterCountry])
 
-  if (loading) return <div className={styles.loading}>Cargando reporte…</div>
-  if (!data) return <div className={styles.loading}>Proyecto no encontrado.</div>
+  if (loading) return <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Cargando reporte ejecutivo...</div>
+  if (!data) return <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Proyecto no encontrado.</div>
 
-  const countryShort = (code: string) => {
-    const c = countries.find((x) => x.code === code)
-    return c?.short_name || c?.name || code
-  }
-  const countryName = (code: string) => countries.find((c) => c.code === code)?.name || code
-
+  const overallProgress = fD.length ? Math.round(avgOf(fD)) : 0
+  const riskCount = fD.filter((s) => s.pct < 25).length
   const counts = estCounts(fD)
-  const risks = buildRiskMatrix(fD, phases)
-  const overdue = overdueItems(fD, phases)
-  const health = projectHealth(fD, risks, overdue.length, countryName)
-  const grid3 = riskGrid(risks)
-  const ink3 = cv('--ink3')
-  const gridc = cv('--grid')
+  const uatCount = counts['testing'] || 0
+  const totalSocieties = data.societies.length
 
-  // Países visibles (respeta filtro)
-  const paisCodes = (pais === 'all' ? countries.map((c) => c.code) : [pais]).filter((code) =>
-    flat.some((x) => x.f === code)
-  )
+  // Charts Config
+  // 1. Chart Country (Horizontal Bar)
+  const countryCodes = filterCountry === 'ALL' ? countries.map(c => c.code) : [filterCountry]
+  const cAvgs = countryCodes.map(code => {
+    const cData = flat.filter(x => x.f === code)
+    return cData.length ? Math.round(avgOf(cData)) : 0
+  })
+  
+  const chartCountryOption = {
+    grid: { left: '3%', right: '10%', bottom: '3%', top: '3%', containLabel: true },
+    xAxis: { type: 'value', max: 100, splitLine: { lineStyle: { color: '#f1f5f9' } } },
+    yAxis: { type: 'category', data: countryCodes.map(c => countries.find(x => x.code === c)?.name || c), axisLabel: { fontWeight: 'bold', color: '#334155' } },
+    series: [{
+      type: 'bar',
+      data: cAvgs,
+      itemStyle: { color: '#facc15', borderRadius: 4 },
+      barWidth: 16,
+      label: { show: true, position: 'right', formatter: '{c}%', fontWeight: 'bold' }
+    }]
+  }
 
-  // ---- Avance por país (barras horizontales con relieve) ----
-  const paisAvg = paisCodes.map((code) => avgOf(flat.filter((x) => x.f === code)))
-  const avancePaisOption = {
-    grid: { left: 8, right: 40, top: 8, bottom: 8, containLabel: true },
-    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    xAxis: { type: 'value', max: 100, axisLabel: { color: ink3, formatter: '{value}%' }, splitLine: { lineStyle: { color: gridc } } },
-    yAxis: { type: 'category', data: paisCodes.map(countryShort), axisLabel: { color: cv('--ink2'), fontWeight: 600 } },
-    series: [
-      {
-        type: 'bar',
-        data: paisAvg.map((v) => ({
-          value: v,
-          itemStyle: {
-            borderRadius: [0, 8, 8, 0],
-            color: grad(bandColorHex(Math.max(0, v - 20)), bandColorHex(v)),
-            shadowBlur: 10,
-            shadowColor: 'rgba(0,0,0,.25)',
-            shadowOffsetY: 3,
-          },
-        })),
-        barWidth: '58%',
-        label: { show: true, position: 'right', color: cv('--ink'), fontWeight: 700, formatter: '{c}%' },
+  // 2. Chart Status Composition (Doughnut)
+  const statusLabels = ['Etapa Inicial', 'En Elaboración', 'Pruebas UAT']
+  const initCount = counts['init'] || 0
+  const elabCount = (counts['client'] || 0) + (counts['proc'] || 0)
+  const chartStatusOption = {
+    tooltip: { trigger: 'item' },
+    legend: { bottom: '0%', icon: 'circle', textStyle: { fontWeight: 'bold', color: '#64748b' } },
+    series: [{
+      type: 'pie',
+      radius: ['50%', '75%'],
+      avoidLabelOverlap: false,
+      itemStyle: { borderWidth: 2, borderColor: '#fff' },
+      label: { show: false },
+      data: [
+        { value: initCount, name: 'Etapa Inicial', itemStyle: { color: '#94a3b8' } },
+        { value: elabCount, name: 'En Elaboración', itemStyle: { color: '#0ea5e9' } },
+        { value: uatCount, name: 'Pruebas UAT', itemStyle: { color: '#d97706' } }
+      ]
+    }]
+  }
+
+  // 3. Simplified Funnel (Bar)
+  const macroFases = ['1. Planificación', '2. Diseño BBP', '3. Desarrollo EF', '4. Pruebas UAT']
+  const countF1 = fD.length
+  const countF2 = fD.filter(d => d.pct >= 30).length
+  const countF3 = fD.filter(d => d.pct >= 60).length
+  const countF4 = fD.filter(d => d.pct >= 65).length
+
+  const chartFunnelOption = {
+    grid: { left: '3%', right: '3%', bottom: '3%', top: '10%', containLabel: true },
+    xAxis: { type: 'category', data: macroFases, axisLabel: { fontWeight: 'bold', color: '#64748b', fontSize: 11 } },
+    yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f1f5f9' } } },
+    series: [{
+      type: 'bar',
+      data: [countF1, countF2, countF3, countF4],
+      itemStyle: { 
+        color: (params: any) => ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'][params.dataIndex],
+        borderRadius: [6, 6, 0, 0]
       },
-    ],
-  }
-
-  // ---- Composición por estado (dona con total al centro) ----
-  const estKeys = (['testing', 'go', 'client', 'proc', 'init'] as Status[]).filter((k) => counts[k] > 0)
-  const donutOption = {
-    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-    series: [
-      {
-        type: 'pie',
-        radius: ['58%', '82%'],
-        avoidLabelOverlap: false,
-        itemStyle: { borderColor: cv('--panel'), borderWidth: 3, shadowBlur: 8, shadowColor: 'rgba(0,0,0,.2)' },
-        label: { show: false },
-        data: estKeys.map((k) => ({ name: EST[k].label, value: counts[k], itemStyle: { color: cv(EST[k].cssVar) } })),
-      },
-    ],
-    graphic: {
-      type: 'text',
-      left: 'center',
-      top: 'center',
-      style: { text: `${fD.length}\nentregables`, textAlign: 'center', fill: cv('--ink'), fontSize: 18, fontWeight: 800, lineHeight: 20 },
-    },
-  }
-
-  // ---- Embudo por fase ----
-  const fCounts = phaseCounts(fD, phases)
-  const funnelOption = {
-    tooltip: { trigger: 'item', formatter: '{b}: {c} entregables' },
-    series: [
-      {
-        type: 'funnel',
-        left: '2%',
-        right: '2%',
-        top: 6,
-        bottom: 6,
-        minSize: '20%',
-        sort: 'descending',
-        gap: 2,
-        label: { show: true, position: 'inside', color: '#fff', fontSize: 10, formatter: '{b}' },
-        itemStyle: { borderColor: cv('--panel'), borderWidth: 1, shadowBlur: 6, shadowColor: 'rgba(0,0,0,.2)' },
-        data: phases.map((p, i) => ({ name: p.name, value: fCounts[i] })),
-      },
-    ],
-  }
-
-  const onPaisBarClick = (p: any) => {
-    const code = paisCodes[p.dataIndex]
-    if (!code) return
-    const list = flat.filter((x) => x.f === code)
-    setModal({
-      title: countryName(code),
-      sub: `${new Set(list.map((x) => x.soc)).size} sociedades · ${list.length} entregables`,
-      rows: socList(list).map((s) => ({ k: s.soc, v: `${s.pct}% · ${EST[s.est].label}` })),
-    })
-  }
-  const onFunnelClick = (p: any) => {
-    const i = phases.findIndex((ph) => ph.name === p.name)
-    if (i < 0) return
-    const reached = fD.filter((x) => x.last >= i)
-    setModal({
-      title: p.name,
-      sub: `${reached.length} entregables alcanzaron esta fase · peso ${phases[i].weight}%`,
-      rows: reached.slice(0, 20).map((x) => ({ k: `${x.soc} · ${x.rep}`, v: `${x.pct}%` })),
-    })
+      barWidth: '40%',
+      label: { show: true, position: 'top', fontWeight: 'bold' }
+    }]
   }
 
   return (
-    <div className={styles.wrap} key={themeTick}>
-      {/* Marca */}
-      <div className={styles.brandRow}>
-        <Logo url={settings?.innoteam_logo_url} name="InnoTeam" kind="innoteam" height={28} />
-        <span className={styles.brandX}>×</span>
-        <Logo url={data.project.client_logo_url} name={data.project.name} kind="client" color={data.project.brand_color} height={28} />
-      </div>
-
-      <div className={styles.rhead}>
-        <div className={styles.rtitle}>
-          <h1>{data.project.name}</h1>
-          <p>{data.project.subtitle || 'Reporte de seguimiento'} · Estado ejecutivo</p>
-        </div>
-        <div className={styles.ractions}>
-          <Link href={`/dashboard/projects/${projectId}`} className={styles.btn}>
-            ← Proyecto
-          </Link>
-          {canEdit && (
-            <Link href={`/dashboard/projects/${projectId}/edit`} className={styles.btn}>
-              ✎ Detalle
-            </Link>
-          )}
-          <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={() => window.print()}>
-            ⤓ Exportar
-          </button>
-        </div>
-      </div>
-
-      {/* Filtro país */}
-      <div className={styles.filterbar}>
-        <span className={styles.flabel}>País</span>
-        <span className={`${styles.chip} ${pais === 'all' ? styles.chipActive : ''}`} onClick={reset}>
-          Todos
-        </span>
-        {countries.map((c) => (
-          <span
-            key={c.code}
-            className={`${styles.chip} ${pais === c.code ? styles.chipActive : ''}`}
-            onClick={() => setPais((p) => (p === c.code ? 'all' : c.code))}
-          >
-            {countryShort(c.code)}
-          </span>
-        ))}
-      </div>
-
-      {/* Semáforo de estado */}
-      <div className={styles.health} style={{ borderColor: `${health.color}66` }}>
-        <div className={styles.healthDot} style={{ background: `${health.color}22`, color: health.color }}>
-          {health.level === 'En marcha' ? '✓' : health.level === 'En riesgo' ? '!' : '‼'}
-        </div>
-        <div className={styles.healthMain}>
-          <div className="lvl" style={{ color: health.color }}>
-            {health.level}
-          </div>
-          <div className="msg">{health.message}</div>
-        </div>
-      </div>
-
-      {/* Avance por país + Composición por estado */}
-      <div className={`${styles.grid} ${styles.g2}`}>
-        <div className={styles.card}>
-          <div className={styles.chead}>
-            <div>
-              <h2>Avance por país</h2>
-              <p className={styles.cap}>
-                <b>Qué muestra:</b> qué tan avanzado está cada país. Clic en una barra para ver sus sociedades.
-              </p>
-            </div>
-          </div>
-          <ReactECharts option={avancePaisOption} style={{ height: Math.max(180, paisCodes.length * 46) }} notMerge onEvents={{ click: onPaisBarClick }} />
-        </div>
-        <div className={styles.card}>
-          <div className={styles.chead}>
-            <div>
-              <h2>Composición por estado</h2>
-              <p className={styles.cap}>
-                <b>Qué muestra:</b> en qué etapa están los entregables (inicial, elaboración, UAT, producción).
-              </p>
-            </div>
-          </div>
-          <ReactECharts option={donutOption} style={{ height: 240 }} notMerge />
-          <div className={styles.legend}>
-            {estKeys.map((k) => (
-              <div className="li" key={k}>
-                <span className="sw" style={{ background: cv(EST[k].cssVar) }} />
-                {EST[k].label}
-                <b>{counts[k]}</b>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Embudo + Riesgos */}
-      <div className={`${styles.grid} ${styles.g2}`}>
-        <div className={styles.card}>
-          <div className={styles.chead}>
-            <div>
-              <h2>Avance por fase (embudo)</h2>
-              <p className={styles.cap}>
-                <b>Qué muestra:</b> cuántos entregables han pasado cada fase de la metodología. Clic para el detalle.
-              </p>
-            </div>
-          </div>
-          <ReactECharts option={funnelOption} style={{ height: 320 }} notMerge onEvents={{ click: onFunnelClick }} />
-        </div>
-        <div className={styles.card}>
-          <div className={styles.chead}>
-            <div>
-              <h2>Riesgos priorizados</h2>
-              <p className={styles.cap}>
-                <b>Qué muestra:</b> los frentes que requieren atención (probabilidad × impacto). Generado del avance y las fechas.
-              </p>
-            </div>
-            <span className={styles.badge}>{risks.length}</span>
-          </div>
-          {risks.length === 0 ? (
-            <div className={styles.okState}>✓ Sin riesgos relevantes en este filtro.</div>
-          ) : (
-            <div className={styles.riskList}>
-              {risks.slice(0, 5).map((r) => (
-                <div className={styles.riskItem} key={r.key}>
-                  <span className={styles.rdot} style={{ background: LEVEL_COLOR[r.level] }} />
-                  <div>
-                    <div className={styles.rlabel}>{r.label}</div>
-                    <div className={styles.rreason}>
-                      {countryShort(r.pais)} · {r.reason}
-                    </div>
-                  </div>
-                  <span className={styles.rscore} style={{ background: `${LEVEL_COLOR[r.level]}22`, color: LEVEL_COLOR[r.level] }}>
-                    {r.level} · {r.score}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-          {/* Mini-matriz 3x3 */}
-          <div className={styles.rgrid}>
-            {grid3.flatMap((row, ri) => [
-              <div className={styles.axisY} key={`y${ri}`}>
-                {row[0].impactBand}
-              </div>,
-              ...row.map((cell, ci) => (
-                <div className={styles.cell} key={`${ri}-${ci}`} style={{ background: cell.color }}>
-                  {cell.count || ''}
-                </div>
-              )),
-            ])}
-          </div>
-          <div className={styles.rgridFoot}>
-            <div />
-            <div className="cellLabel" style={{ fontSize: 9, color: 'var(--ink3)', textAlign: 'center' }}>
-              Prob. baja
-            </div>
-            <div className="cellLabel" style={{ fontSize: 9, color: 'var(--ink3)', textAlign: 'center' }}>
-              media
-            </div>
-            <div className="cellLabel" style={{ fontSize: 9, color: 'var(--ink3)', textAlign: 'center' }}>
-              alta
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Fechas en riesgo + Plan de acción */}
-      <div className={`${styles.grid} ${styles.g2}`}>
-        <div className={styles.card}>
-          <div className={styles.chead}>
-            <div>
-              <h2>Fechas en riesgo</h2>
-              <p className={styles.cap}>
-                <b>Qué muestra:</b> entregables con una fecha de fase ya vencida sin completar (cómo vamos vs. plan).
-              </p>
-            </div>
-            <span className={styles.badge}>{overdue.length}</span>
-          </div>
-          {overdue.length === 0 ? (
-            <div className={styles.okState}>✓ Sin fechas vencidas.</div>
-          ) : (
-            <div className={styles.overdue}>
-              {overdue.slice(0, 10).map((o, i) => (
-                <div className={styles.overdueItem} key={i}>
-                  <span>
-                    {o.label} — {o.phase}
-                  </span>
-                  <span className="od">{o.date}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        <div className={styles.card}>
-          <div className={styles.chead}>
-            <div>
-              <h2>Plan de acción</h2>
-              <p className={styles.cap}>
-                <b>Qué muestra:</b> los próximos pasos comprometidos con responsable y fecha.
-              </p>
-            </div>
-          </div>
-          <div className={styles.steps}>
-            {data.steps.map((s, i) => (
-              <div className={styles.step} key={s.id}>
-                <div className="sn">{i + 1}</div>
-                <div>
-                  <div className="st">{s.title}</div>
-                  {s.description && <div className="sd">{s.description}</div>}
-                </div>
-                <div className="meta">
-                  <span className="owner">{s.owner}</span>
-                  <span className="due">{s.due}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Sociedades por país */}
-      <div className={styles.card}>
-        <div className={styles.chead}>
+    <>
+      <style dangerouslySetInnerHTML={{ __html: dashboardStyles }} />
+      <div className="exec-dashboard">
+        
+        {/* Header */}
+        <header style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', gap: '1rem', padding: '0 1rem', paddingTop: '1rem' }}>
           <div>
-            <h2>Sociedades por país</h2>
-            <p className={styles.cap}>
-              <b>Qué muestra:</b> el avance de cada sociedad. Clic en una para ver sus reportes (BG/DRE/FF).
-            </p>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+              <span style={{ color: '#009036' }}>{data.project.name}</span>
+              <span style={{ color: '#cbd5e1' }}>|</span> 
+              Reporte Ejecutivo
+            </h1>
+            <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#64748b', marginTop: '0.25rem' }}>
+              Gestionado por <span style={{ color: '#1c3a91', fontWeight: 800 }}>Inno<span style={{ color: '#8cc63f' }}>Team</span></span>
+            </div>
           </div>
-        </div>
-        <div className={styles.tree}>
-          {countries
-            .filter((c) => pais === 'all' || c.code === pais)
-            .map((c) => {
-              const socs = socList(flat.filter((x) => x.f === c.code))
-              return (
-                <div className={styles.treeCol} key={c.code}>
-                  <div className={styles.treeHead}>
-                    <span>{c.name}</span>
-                    <span style={{ color: bandColorHex(avgOf(flat.filter((x) => x.f === c.code))) }}>
-                      {avgOf(flat.filter((x) => x.f === c.code))}%
-                    </span>
-                  </div>
-                  {socs.map((s) => (
-                    <div
-                      className={styles.treeItem}
-                      key={s.soc}
-                      onClick={() =>
-                        setModal({
-                          title: s.soc,
-                          sub: `${countryName(c.code)} · ${EST[s.est].label}`,
-                          rows: s.reps.map((r) => ({
-                            k: `${r.rep} (${r.code || '—'})`,
-                            v: `${r.pct}% · ${r.last >= 0 ? phases[r.last]?.name || '—' : 'Sin iniciar'}`,
-                          })),
-                          note: s.reps.find((r) => r.obs)?.obs || undefined,
-                        })
-                      }
-                    >
-                      <span>{s.soc}</span>
-                      <span className={styles.tpct} style={{ color: bandColorHex(s.pct) }}>
-                        {s.pct}%
-                      </span>
-                    </div>
-                  ))}
+          
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', background: 'white', padding: '0.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginRight: '0.5rem', marginLeft: '0.5rem' }}>Filtro País:</span>
+            <button onClick={() => setFilterCountry('ALL')} className={`exec-filter-btn ${filterCountry === 'ALL' ? 'active' : ''}`}>Todos</button>
+            {countries.map(c => (
+              <button key={c.code} onClick={() => setFilterCountry(c.code)} className={`exec-filter-btn ${filterCountry === c.code ? 'active' : ''}`}>
+                {c.name}
+              </button>
+            ))}
+          </div>
+        </header>
+
+        <div style={{ padding: '0 1rem' }}>
+          {/* KPI Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
+            <div className="exec-card" style={{ padding: '1.25rem', borderTop: '4px solid #1c3a91' }}>
+              <div className="exec-kpi-title">Avance Global</div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem' }}>
+                <div className="exec-kpi-value">{overallProgress}%</div>
+              </div>
+              <div style={{ width: '100%', background: '#f1f5f9', borderRadius: '9999px', height: '0.5rem', marginTop: '0.75rem' }}>
+                <div style={{ background: '#1c3a91', height: '0.5rem', borderRadius: '9999px', width: `${overallProgress}%` }}></div>
+              </div>
+            </div>
+            
+            <div className="exec-card" style={{ padding: '1.25rem', borderTop: '4px solid #009036' }}>
+              <div className="exec-kpi-title">Total Entregables</div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem' }}>
+                <div className="exec-kpi-value">{fD.length}</div>
+                <div className="exec-kpi-subtitle">BG / DRE / FF</div>
+              </div>
+              <div className="exec-kpi-desc">{totalSocieties} sociedades en alcance</div>
+            </div>
+
+            <div className="exec-card" style={{ padding: '1.25rem', borderTop: '4px solid #eab308' }}>
+              <div className="exec-kpi-title">Frentes en Pruebas (UAT)</div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem' }}>
+                <div className="exec-kpi-value">{uatCount}</div>
+                <div className="exec-kpi-subtitle">entregables</div>
+              </div>
+              <div className="exec-kpi-desc" style={{ color: '#ca8a04' }}>Fase actual del proyecto</div>
+            </div>
+
+            <div className="exec-card" style={{ padding: '1.25rem', borderTop: '4px solid #e31c1b' }}>
+              <div className="exec-kpi-title">Frentes en Riesgo</div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem' }}>
+                <div className="exec-kpi-value" style={{ color: '#e31c1b' }}>{riskCount}</div>
+                <div className="exec-kpi-subtitle">retrasados</div>
+              </div>
+              <div className="exec-kpi-desc">Avance crítico menor al 25%</div>
+            </div>
+          </div>
+
+          {/* Main Dashboard Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, minmax(0, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
+              
+            {/* Left Column: Charts */}
+            <div style={{ gridColumn: 'span 12' }} className="@container">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                <div className="exec-card" style={{ padding: '1.25rem' }}>
+                  <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#334155', margin: '0 0 0.25rem 0' }}>Avance por País</h3>
+                  <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0 0 1rem 0' }}>Progreso promedio de sus entregables.</p>
+                  <ReactECharts option={chartCountryOption} style={{ height: '240px' }} />
                 </div>
-              )
-            })}
+                <div className="exec-card" style={{ padding: '1.25rem', position: 'relative' }}>
+                  <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#334155', margin: '0 0 0.25rem 0' }}>Composición por Estado</h3>
+                  <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0 0 1rem 0' }}>Distribución macro de las fases.</p>
+                  <ReactECharts option={chartStatusOption} style={{ height: '240px' }} />
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', paddingTop: '1.5rem' }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#1f2937' }}>{fD.length}</div>
+                      <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Total</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Row */}
+            <div style={{ gridColumn: 'span 12' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                {/* Funnel Simplificado */}
+                <div className="exec-card" style={{ padding: '1.25rem' }}>
+                  <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#334155', margin: '0 0 0.25rem 0' }}>Embudo de Fases (Simplificado)</h3>
+                  <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0 0 1rem 0' }}>Tasas de conversión agrupadas para evitar ruido visual.</p>
+                  <ReactECharts option={chartFunnelOption} style={{ height: '280px' }} />
+                </div>
+
+                {/* Plan de Acción Ejecutivo (Dynamic from DB) */}
+                <div className="exec-card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#334155', margin: 0 }}>Plan de Acción Ejecutivo</h3>
+                    <span style={{ background: '#e0e7ff', color: '#3730a3', fontSize: '0.625rem', fontWeight: 700, padding: '0.25rem 0.5rem', borderRadius: '0.25rem' }}>Prioridad</span>
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0 0 1rem 0' }}>Próximos pasos comprometidos con responsable y fecha.</p>
+                  
+                  <div style={{ flexGrow: 1, overflowY: 'auto', maxHeight: '280px', paddingRight: '0.5rem' }}>
+                    {data.steps.length === 0 ? (
+                      <div style={{ fontSize: '0.875rem', color: '#64748b', textAlign: 'center', marginTop: '2rem' }}>No hay pasos de acción registrados.</div>
+                    ) : (
+                      data.steps.map((s, i) => (
+                        <div className="exec-action-item" key={s.id}>
+                          <div className="exec-action-num">{i + 1}</div>
+                          <div style={{ flexGrow: 1 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                              <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#1f2937', margin: 0 }}>{s.title}</h4>
+                              <span style={{ fontSize: '0.625rem', fontWeight: 600, color: '#64748b', textAlign: 'right' }}>{s.owner} <br/> ({s.due})</span>
+                            </div>
+                            {s.description && <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '0.25rem 0 0 0' }}>{s.description}</p>}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
-      {modal && (
-        <div className={styles.modalOverlay} onClick={() => setModal(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHead}>
-              <div>
-                <h3>{modal.title}</h3>
-                {modal.sub && <div className="sub">{modal.sub}</div>}
-              </div>
-              <button className={styles.modalClose} onClick={() => setModal(null)}>
-                ✕
-              </button>
-            </div>
-            {modal.rows.length === 0 ? (
-              <div className={styles.modalNote}>Sin elementos.</div>
-            ) : (
-              modal.rows.map((r, i) => (
-                <div className={styles.mrow} key={i}>
-                  <span className="mk">{r.k}</span>
-                  <span className="mv">{r.v}</span>
-                </div>
-              ))
-            )}
-            {modal.note && <div className={styles.modalNote}>{modal.note}</div>}
-          </div>
-        </div>
-      )}
-    </div>
+    </>
   )
 }
