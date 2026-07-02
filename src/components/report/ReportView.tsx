@@ -11,39 +11,206 @@ import {
   type Settings,
   type FlatDeliverable,
 } from '@/lib/supabase'
-import {
-  avgOf,
-  estCounts,
-} from '@/lib/report'
+import { avgOf } from '@/lib/report'
 
-// Custom CSS for the Executive Dashboard
-const dashboardStyles = `
-  .exec-dashboard { font-family: 'Inter', sans-serif; background: #f8f9fa; color: #1e293b; min-height: 100vh; padding-bottom: 2rem; }
-  .exec-card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); border: 1px solid #e2e8f0; }
-  .exec-kpi-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; font-weight: 700; margin-bottom: 0.5rem; }
-  .exec-kpi-value { font-size: 2.25rem; font-weight: 800; color: #0f172a; line-height: 1.2; }
-  .exec-kpi-subtitle { font-size: 0.875rem; color: #64748b; font-weight: 500; padding-bottom: 0.25rem; }
-  .exec-kpi-desc { font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-top: 0.75rem; }
-  .exec-filter-btn { padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; transition: all 0.2s; border: 1px solid #cbd5e1; color: #475569; background: white; cursor: pointer; }
-  .exec-filter-btn.active { background: #1c3a91; color: white; border-color: #1c3a91; box-shadow: 0 2px 8px rgba(28, 58, 145, 0.3); }
-  .exec-filter-btn:hover:not(.active) { background: #f1f5f9; }
-  .exec-action-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
-  .exec-action-item:last-child { border-bottom: none; }
-  .exec-action-num { width: 24px; height: 24px; border-radius: 50%; background: #f1f5f9; color: #64748b; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; }
+const pmoStyles = `
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+  
+  .pmo-dashboard {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: #f1f5f9;
+    color: #0f172a;
+    min-height: 100vh;
+    padding-bottom: 3rem;
+  }
+  
+  .pmo-header {
+    background: white;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  
+  .pmo-title h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+    letter-spacing: -0.025em;
+  }
+  
+  .pmo-title p {
+    margin: 0.25rem 0 0 0;
+    font-size: 0.875rem;
+    color: #64748b;
+    font-weight: 500;
+  }
+  
+  .pmo-container {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  .pmo-grid-kpi {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .pmo-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    border: 1px solid #e2e8f0;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .pmo-card:hover {
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+  }
+
+  .kpi-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+    color: #64748b;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .kpi-value {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+
+  .kpi-subtitle {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #94a3b8;
+  }
+
+  .pmo-section-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 1.25rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .pmo-section-title::before {
+    content: '';
+    display: block;
+    width: 4px;
+    height: 16px;
+    background: #009036;
+    border-radius: 2px;
+  }
+
+  .filter-group {
+    display: flex;
+    gap: 0.5rem;
+    background: #f1f5f9;
+    padding: 0.375rem;
+    border-radius: 12px;
+  }
+
+  .filter-btn {
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: #475569;
+    transition: all 0.2s ease;
+  }
+
+  .filter-btn:hover {
+    color: #0f172a;
+  }
+
+  .filter-btn.active {
+    background: white;
+    color: #0f172a;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .status-good { background: #dcfce7; color: #166534; }
+  .status-warn { background: #fef9c3; color: #854d0e; }
+  .status-danger { background: #fee2e2; color: #991b1b; }
+
+  .action-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .action-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .action-date {
+    background: white;
+    padding: 0.5rem;
+    border-radius: 8px;
+    text-align: center;
+    min-width: 60px;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+  }
+  
+  .action-date-month { font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: #64748b; }
+  .action-date-day { font-size: 1.125rem; font-weight: 800; color: #0f172a; line-height: 1; margin-top: 0.1rem; }
+
+  .action-content h4 { margin: 0 0 0.25rem 0; font-size: 0.95rem; font-weight: 700; color: #0f172a; }
+  .action-content p { margin: 0; font-size: 0.8rem; color: #64748b; line-height: 1.4; }
+  .action-owner { display: inline-flex; align-items: center; gap: 0.35rem; margin-top: 0.5rem; font-size: 0.75rem; font-weight: 600; color: #1c3a91; background: #e0e7ff; padding: 0.2rem 0.6rem; border-radius: 6px; }
 `
 
 export default function ReportView({ projectId, canEdit }: { projectId: string; canEdit: boolean }) {
   const [data, setData] = useState<ProjectData | null>(null)
-  const [settings, setSettings] = useState<Settings | null>(null)
   const [loading, setLoading] = useState(true)
   const [filterCountry, setFilterCountry] = useState('ALL')
 
   useEffect(() => {
     let alive = true
-    Promise.all([getProjectData(projectId), getSettings()]).then(([d, s]) => {
+    Promise.all([getProjectData(projectId), getSettings()]).then(([d]) => {
       if (alive) {
         setData(d)
-        setSettings(s)
         setLoading(false)
       }
     })
@@ -52,220 +219,220 @@ export default function ReportView({ projectId, canEdit }: { projectId: string; 
 
   const flat = useMemo<FlatDeliverable[]>(() => (data ? flattenDeliverables(data) : []), [data])
   const countries = data?.countries || []
-  const phases = data?.project.phases || []
-
+  
   const fD = useMemo(() => flat.filter((d) => filterCountry === 'ALL' || d.f === filterCountry), [flat, filterCountry])
 
-  if (loading) return <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Cargando reporte ejecutivo...</div>
-  if (!data) return <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Proyecto no encontrado.</div>
+  if (loading) return <div style={{ padding: '4rem', textAlign: 'center', color: '#64748b', fontFamily: 'sans-serif' }}>Cargando Control Tower...</div>
+  if (!data) return <div style={{ padding: '4rem', textAlign: 'center', color: '#64748b', fontFamily: 'sans-serif' }}>Proyecto no encontrado.</div>
 
-  const overallProgress = fD.length ? Math.round(avgOf(fD)) : 0
-  const riskCount = fD.filter((s) => s.pct < 25).length
-  const counts = estCounts(fD)
-  const uatCount = counts['testing'] || 0
+  // --- PMO EXPERT METRICS CALCULATION ---
+  const totalDeliverables = fD.length
+  const overallProgress = totalDeliverables ? Math.round(avgOf(fD)) : 0
+  const approvedCount = fD.filter(d => d.pct >= 100).length
+  const criticalRiskCount = fD.filter(d => d.pct < 25).length
   const totalSocieties = data.societies.length
 
-  // Charts Config
-  // 1. Chart Country (Horizontal Bar)
+  // Health logic
+  let healthStatus = 'good'
+  let healthLabel = 'Saludable'
+  if (criticalRiskCount > (totalDeliverables * 0.15)) { healthStatus = 'danger'; healthLabel = 'Riesgo Alto' }
+  else if (criticalRiskCount > 0 || overallProgress < 40) { healthStatus = 'warn'; healthLabel = 'Riesgo Medio' }
+
+  // Phase calculation
+  const phaseNames = ['Planificación', 'Diseño BBP', 'Desarrollo EF', 'Pruebas UAT', 'Go-Live']
+  const phaseCounts = [
+    fD.filter(d => d.pct < 25).length,
+    fD.filter(d => d.pct >= 25 && d.pct < 50).length,
+    fD.filter(d => d.pct >= 50 && d.pct < 75).length,
+    fD.filter(d => d.pct >= 75 && d.pct < 100).length,
+    approvedCount
+  ]
+  const maxPhaseIndex = phaseCounts.indexOf(Math.max(...phaseCounts))
+  const bottleneckPhase = phaseNames[maxPhaseIndex] || 'N/A'
+
+  // --- ECHARTS CONFIGURATION ---
+
+  // 1. Phase-Gates Roadmap (Replaces Funnel)
+  const chartRoadmapOption = {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    grid: { left: '3%', right: '4%', bottom: '5%', top: '15%', containLabel: true },
+    xAxis: { type: 'category', data: phaseNames, axisLine: { lineStyle: { color: '#cbd5e1' } }, axisLabel: { color: '#475569', fontWeight: 'bold' } },
+    yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f1f5f9', type: 'dashed' } } },
+    series: [
+      {
+        name: 'Entregables en Fase',
+        type: 'bar',
+        barWidth: '45%',
+        itemStyle: {
+          color: new ReactECharts.echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#0ea5e9' },
+            { offset: 1, color: '#1c3a91' }
+          ]),
+          borderRadius: [6, 6, 0, 0]
+        },
+        data: phaseCounts,
+        label: { show: true, position: 'top', color: '#0f172a', fontWeight: 'bold', fontSize: 14 }
+      }
+    ]
+  }
+
+  // 2. Geographic Performance (Clean Bar)
   const countryCodes = filterCountry === 'ALL' ? countries.map(c => c.code) : [filterCountry]
   const cAvgs = countryCodes.map(code => {
     const cData = flat.filter(x => x.f === code)
     return cData.length ? Math.round(avgOf(cData)) : 0
   })
-  
-  const chartCountryOption = {
-    grid: { left: '3%', right: '10%', bottom: '3%', top: '3%', containLabel: true },
+
+  const chartGeoOption = {
+    tooltip: { trigger: 'axis', formatter: '{b}: {c}%' },
+    grid: { left: '3%', right: '10%', bottom: '5%', top: '5%', containLabel: true },
     xAxis: { type: 'value', max: 100, splitLine: { lineStyle: { color: '#f1f5f9' } } },
-    yAxis: { type: 'category', data: countryCodes.map(c => countries.find(x => x.code === c)?.name || c), axisLabel: { fontWeight: 'bold', color: '#334155' } },
-    series: [{
-      type: 'bar',
-      data: cAvgs,
-      itemStyle: { color: '#facc15', borderRadius: 4 },
-      barWidth: 16,
-      label: { show: true, position: 'right', formatter: '{c}%', fontWeight: 'bold' }
-    }]
-  }
-
-  // 2. Chart Status Composition (Doughnut)
-  const statusLabels = ['Etapa Inicial', 'En Elaboración', 'Pruebas UAT']
-  const initCount = counts['init'] || 0
-  const elabCount = (counts['client'] || 0) + (counts['proc'] || 0)
-  const chartStatusOption = {
-    tooltip: { trigger: 'item' },
-    legend: { bottom: '0%', icon: 'circle', textStyle: { fontWeight: 'bold', color: '#64748b' } },
-    series: [{
-      type: 'pie',
-      radius: ['50%', '75%'],
-      avoidLabelOverlap: false,
-      itemStyle: { borderWidth: 2, borderColor: '#fff' },
-      label: { show: false },
-      data: [
-        { value: initCount, name: 'Etapa Inicial', itemStyle: { color: '#94a3b8' } },
-        { value: elabCount, name: 'En Elaboración', itemStyle: { color: '#0ea5e9' } },
-        { value: uatCount, name: 'Pruebas UAT', itemStyle: { color: '#d97706' } }
-      ]
-    }]
-  }
-
-  // 3. Simplified Funnel (Bar)
-  const macroFases = ['1. Planificación', '2. Diseño BBP', '3. Desarrollo EF', '4. Pruebas UAT']
-  const countF1 = fD.length
-  const countF2 = fD.filter(d => d.pct >= 30).length
-  const countF3 = fD.filter(d => d.pct >= 60).length
-  const countF4 = fD.filter(d => d.pct >= 65).length
-
-  const chartFunnelOption = {
-    grid: { left: '3%', right: '3%', bottom: '3%', top: '10%', containLabel: true },
-    xAxis: { type: 'category', data: macroFases, axisLabel: { fontWeight: 'bold', color: '#64748b', fontSize: 11 } },
-    yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f1f5f9' } } },
-    series: [{
-      type: 'bar',
-      data: [countF1, countF2, countF3, countF4],
-      itemStyle: { 
-        color: (params: any) => ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'][params.dataIndex],
-        borderRadius: [6, 6, 0, 0]
-      },
-      barWidth: '40%',
-      label: { show: true, position: 'top', fontWeight: 'bold' }
-    }]
+    yAxis: { type: 'category', data: countryCodes.map(c => countries.find(x => x.code === c)?.name || c), axisLabel: { color: '#475569', fontWeight: 'bold' } },
+    series: [
+      {
+        type: 'bar',
+        barWidth: 20,
+        itemStyle: {
+          color: new ReactECharts.echarts.graphic.LinearGradient(1, 0, 0, 0, [
+            { offset: 0, color: '#8cc63f' },
+            { offset: 1, color: '#009036' }
+          ]),
+          borderRadius: [0, 8, 8, 0]
+        },
+        data: cAvgs,
+        label: { show: true, position: 'right', formatter: '{c}%', color: '#0f172a', fontWeight: 'bold' }
+      }
+    ]
   }
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: dashboardStyles }} />
-      <div className="exec-dashboard">
+      <style dangerouslySetInnerHTML={{ __html: pmoStyles }} />
+      <div className="pmo-dashboard">
         
         {/* Header */}
-        <header style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', gap: '1rem', padding: '0 1rem', paddingTop: '1rem' }}>
-          <div>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
-              <span style={{ color: '#009036' }}>{data.project.name}</span>
-              <span style={{ color: '#cbd5e1' }}>|</span> 
-              Reporte Ejecutivo
-            </h1>
-            <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#64748b', marginTop: '0.25rem' }}>
-              Gestionado por <span style={{ color: '#1c3a91', fontWeight: 800 }}>Inno<span style={{ color: '#8cc63f' }}>Team</span></span>
-            </div>
+        <header className="pmo-header">
+          <div className="pmo-title">
+            <h1>{data.project.name}</h1>
+            <p>Control Tower · Estado Ejecutivo de Implementación</p>
           </div>
           
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', background: 'white', padding: '0.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginRight: '0.5rem', marginLeft: '0.5rem' }}>Filtro País:</span>
-            <button onClick={() => setFilterCountry('ALL')} className={`exec-filter-btn ${filterCountry === 'ALL' ? 'active' : ''}`}>Todos</button>
+          <div className="filter-group">
+            <button onClick={() => setFilterCountry('ALL')} className={`filter-btn ${filterCountry === 'ALL' ? 'active' : ''}`}>
+              Global
+            </button>
             {countries.map(c => (
-              <button key={c.code} onClick={() => setFilterCountry(c.code)} className={`exec-filter-btn ${filterCountry === c.code ? 'active' : ''}`}>
+              <button key={c.code} onClick={() => setFilterCountry(c.code)} className={`filter-btn ${filterCountry === c.code ? 'active' : ''}`}>
                 {c.name}
               </button>
             ))}
           </div>
         </header>
 
-        <div style={{ padding: '0 1rem' }}>
-          {/* KPI Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
-            <div className="exec-card" style={{ padding: '1.25rem', borderTop: '4px solid #1c3a91' }}>
-              <div className="exec-kpi-title">Avance Global</div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem' }}>
-                <div className="exec-kpi-value">{overallProgress}%</div>
+        <main className="pmo-container">
+          
+          {/* 6 PMO HEALTH SCORECARDS */}
+          <div className="pmo-grid-kpi">
+            <div className="pmo-card" style={{ borderTop: '4px solid #1c3a91' }}>
+              <div className="kpi-title">Avance Real vs Plan</div>
+              <div className="kpi-value">{overallProgress}%</div>
+              <div className="kpi-subtitle">Progreso consolidado</div>
+              <div style={{ background: '#f1f5f9', height: '6px', borderRadius: '4px', marginTop: '1rem' }}>
+                <div style={{ background: '#1c3a91', height: '100%', width: `${overallProgress}%`, borderRadius: '4px' }} />
               </div>
-              <div style={{ width: '100%', background: '#f1f5f9', borderRadius: '9999px', height: '0.5rem', marginTop: '0.75rem' }}>
-                <div style={{ background: '#1c3a91', height: '0.5rem', borderRadius: '9999px', width: `${overallProgress}%` }}></div>
-              </div>
-            </div>
-            
-            <div className="exec-card" style={{ padding: '1.25rem', borderTop: '4px solid #009036' }}>
-              <div className="exec-kpi-title">Total Entregables</div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem' }}>
-                <div className="exec-kpi-value">{fD.length}</div>
-                <div className="exec-kpi-subtitle">BG / DRE / FF</div>
-              </div>
-              <div className="exec-kpi-desc">{totalSocieties} sociedades en alcance</div>
             </div>
 
-            <div className="exec-card" style={{ padding: '1.25rem', borderTop: '4px solid #eab308' }}>
-              <div className="exec-kpi-title">Frentes en Pruebas (UAT)</div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem' }}>
-                <div className="exec-kpi-value">{uatCount}</div>
-                <div className="exec-kpi-subtitle">entregables</div>
+            <div className="pmo-card">
+              <div className="kpi-title">Salud del Proyecto</div>
+              <div style={{ margin: '0.5rem 0 1rem 0' }}>
+                <span className={`status-badge status-${healthStatus}`}>{healthLabel}</span>
               </div>
-              <div className="exec-kpi-desc" style={{ color: '#ca8a04' }}>Fase actual del proyecto</div>
+              <div className="kpi-subtitle">Basado en retrasos críticos</div>
             </div>
 
-            <div className="exec-card" style={{ padding: '1.25rem', borderTop: '4px solid #e31c1b' }}>
-              <div className="exec-kpi-title">Frentes en Riesgo</div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem' }}>
-                <div className="exec-kpi-value" style={{ color: '#e31c1b' }}>{riskCount}</div>
-                <div className="exec-kpi-subtitle">retrasados</div>
-              </div>
-              <div className="exec-kpi-desc">Avance crítico menor al 25%</div>
+            <div className="pmo-card">
+              <div className="kpi-title" style={{ color: '#009036' }}>Entregables Aprobados</div>
+              <div className="kpi-value">{approvedCount} <span style={{ fontSize: '1rem', color: '#94a3b8' }}>/ {totalDeliverables}</span></div>
+              <div className="kpi-subtitle">Documentos al 100% (Go-Live)</div>
+            </div>
+
+            <div className="pmo-card">
+              <div className="kpi-title" style={{ color: '#e31c1b' }}>Frentes en Riesgo</div>
+              <div className="kpi-value">{criticalRiskCount}</div>
+              <div className="kpi-subtitle">Avance estancado &lt; 25%</div>
+            </div>
+
+            <div className="pmo-card">
+              <div className="kpi-title">Cuello de Botella</div>
+              <div className="kpi-value" style={{ fontSize: '1.5rem', marginTop: '0.5rem' }}>{bottleneckPhase}</div>
+              <div className="kpi-subtitle">Fase con más carga actual ({Math.max(...phaseCounts)} reqs)</div>
+            </div>
+
+            <div className="pmo-card">
+              <div className="kpi-title">Alcance Geográfico</div>
+              <div className="kpi-value">{totalSocieties} <span style={{ fontSize: '1rem', color: '#94a3b8' }}>Socs</span></div>
+              <div className="kpi-subtitle">Desplegado en {countries.length} países</div>
             </div>
           </div>
 
-          {/* Main Dashboard Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, minmax(0, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
-              
-            {/* Left Column: Charts */}
-            <div style={{ gridColumn: 'span 12' }} className="@container">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
-                <div className="exec-card" style={{ padding: '1.25rem' }}>
-                  <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#334155', margin: '0 0 0.25rem 0' }}>Avance por País</h3>
-                  <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0 0 1rem 0' }}>Progreso promedio de sus entregables.</p>
-                  <ReactECharts option={chartCountryOption} style={{ height: '240px' }} />
-                </div>
-                <div className="exec-card" style={{ padding: '1.25rem', position: 'relative' }}>
-                  <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#334155', margin: '0 0 0.25rem 0' }}>Composición por Estado</h3>
-                  <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0 0 1rem 0' }}>Distribución macro de las fases.</p>
-                  <ReactECharts option={chartStatusOption} style={{ height: '240px' }} />
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', paddingTop: '1.5rem' }}>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#1f2937' }}>{fD.length}</div>
-                      <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Total</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1.5rem' }}>
+            
+            {/* Phase-Gates Roadmap */}
+            <div className="pmo-card" style={{ gridColumn: 'span 8' }}>
+              <h2 className="pmo-section-title">Roadmap de Fases (Phase-Gates)</h2>
+              <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1rem' }}>Volumen de entregables transitando por la metodología de implementación.</p>
+              <ReactECharts option={chartRoadmapOption} style={{ height: '320px' }} />
             </div>
 
-            {/* Bottom Row */}
-            <div style={{ gridColumn: 'span 12' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
-                {/* Funnel Simplificado */}
-                <div className="exec-card" style={{ padding: '1.25rem' }}>
-                  <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#334155', margin: '0 0 0.25rem 0' }}>Embudo de Fases (Simplificado)</h3>
-                  <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0 0 1rem 0' }}>Tasas de conversión agrupadas para evitar ruido visual.</p>
-                  <ReactECharts option={chartFunnelOption} style={{ height: '280px' }} />
-                </div>
+            {/* Geographic Performance */}
+            <div className="pmo-card" style={{ gridColumn: 'span 4' }}>
+              <h2 className="pmo-section-title">Desempeño Geográfico</h2>
+              <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1rem' }}>Avance global consolidado por país.</p>
+              <ReactECharts option={chartGeoOption} style={{ height: '320px' }} />
+            </div>
 
-                {/* Plan de Acción Ejecutivo (Dynamic from DB) */}
-                <div className="exec-card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                    <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#334155', margin: 0 }}>Plan de Acción Ejecutivo</h3>
-                    <span style={{ background: '#e0e7ff', color: '#3730a3', fontSize: '0.625rem', fontWeight: 700, padding: '0.25rem 0.5rem', borderRadius: '0.25rem' }}>Prioridad</span>
-                  </div>
-                  <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0 0 1rem 0' }}>Próximos pasos comprometidos con responsable y fecha.</p>
-                  
-                  <div style={{ flexGrow: 1, overflowY: 'auto', maxHeight: '280px', paddingRight: '0.5rem' }}>
-                    {data.steps.length === 0 ? (
-                      <div style={{ fontSize: '0.875rem', color: '#64748b', textAlign: 'center', marginTop: '2rem' }}>No hay pasos de acción registrados.</div>
-                    ) : (
-                      data.steps.map((s, i) => (
-                        <div className="exec-action-item" key={s.id}>
-                          <div className="exec-action-num">{i + 1}</div>
-                          <div style={{ flexGrow: 1 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                              <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#1f2937', margin: 0 }}>{s.title}</h4>
-                              <span style={{ fontSize: '0.625rem', fontWeight: 600, color: '#64748b', textAlign: 'right' }}>{s.owner} <br/> ({s.due})</span>
-                            </div>
-                            {s.description && <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '0.25rem 0 0 0' }}>{s.description}</p>}
+            {/* Action Plan */}
+            <div className="pmo-card" style={{ gridColumn: 'span 12' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                <h2 className="pmo-section-title" style={{ margin: 0 }}>Plan de Acción Inmediato (Steering Committee)</h2>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#3b82f6', background: '#eff6ff', padding: '0.4rem 0.75rem', borderRadius: '8px' }}>
+                  {data.steps.length} acciones requeridas
+                </span>
+              </div>
+              
+              <div className="action-list">
+                {data.steps.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', fontSize: '0.875rem' }}>No hay acciones críticas registradas para el comité.</div>
+                ) : (
+                  data.steps.map((s) => {
+                    // Extract a fake date just for beautiful UI, or use s.due
+                    const due = s.due || 'Pronto'
+                    const day = due.length > 2 ? due.substring(0,2) : due
+                    const month = due.length > 3 ? due.substring(3,6) : 'MES'
+                    
+                    return (
+                      <div className="action-item" key={s.id}>
+                        <div className="action-date">
+                          <div className="action-date-month">{month}</div>
+                          <div className="action-date-day">{day}</div>
+                        </div>
+                        <div className="action-content">
+                          <h4>{s.title}</h4>
+                          {s.description && <p>{s.description}</p>}
+                          <div className="action-owner">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            {s.owner}
                           </div>
                         </div>
-                      ))
-                    )}
-                  </div>
-                </div>
+                      </div>
+                    )
+                  })
+                )}
               </div>
             </div>
+
           </div>
-        </div>
+        </main>
       </div>
     </>
   )
