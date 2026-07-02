@@ -249,7 +249,7 @@ const pmoStyles = `
 
 type ModalState = { isOpen: boolean; title: string; data: FlatDeliverable[] }
 
-export default function ReportView({ projectId }: { projectId: string }) {
+export default function ReportView({ projectId }: { projectId: string; canEdit?: boolean }) {
   const [data, setData] = useState<ProjectData | null>(null)
   const [loading, setLoading] = useState(true)
   const [filterCountry, setFilterCountry] = useState('ALL')
