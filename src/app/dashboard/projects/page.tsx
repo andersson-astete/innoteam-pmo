@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { getDeliverables, getSocieties, getProjectStats, filterDeliverables, PAIS, PAISSHORT, EST } from '@/lib/mockData'
+import { getSocieties, getProjectStats, PAISSHORT, EST } from '@/lib/mockData'
 import styles from './projects.module.css'
 import KPICard from '@/components/KPICard'
 
