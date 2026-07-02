@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import Link from 'next/link'
+
 import ReactECharts from 'echarts-for-react'
 import * as echarts from 'echarts'
 import {
