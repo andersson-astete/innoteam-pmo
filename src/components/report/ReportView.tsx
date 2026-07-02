@@ -257,16 +257,7 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
   const riskExposureNum = Math.min(100, (criticalRiskCount / (totalDeliverables || 1)) * 100)
   const riskExposure = riskExposureNum.toFixed(1)
 
-  // Phase grouping
-  const phaseNames = ['Planificación', 'Diseño BBP', 'Desarrollo EF', 'Pruebas UAT', 'Go-Live']
-  const phaseData = [
-    fD.filter(d => d.pct < 25),
-    fD.filter(d => d.pct >= 25 && d.pct < 50),
-    fD.filter(d => d.pct >= 50 && d.pct < 75),
-    fD.filter(d => d.pct >= 75 && d.pct < 100),
-    approvedDeliverables
-  ]
-  const phaseCounts = phaseData.map(arr => arr.length)
+
 
   // Pie & Donut logic
   const statusLabels = { 'init': 'Inicio', 'proc': 'Proceso', 'testing': 'Pruebas', 'client': 'Aprob. Cliente', 'go': 'Go-Live' }
