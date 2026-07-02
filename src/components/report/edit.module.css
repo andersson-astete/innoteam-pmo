@@ -1,5 +1,5 @@
 .wrap {
-  max-width: 1400px;
+  max-width: 100%;
   margin: 0 auto;
   padding: 8px 4px 60px;
 }
@@ -14,7 +14,7 @@
   align-items: flex-end;
   flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 .head h1 {
   font-size: 22px;
@@ -67,17 +67,23 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 26px 2px 12px;
+  margin: 22px 2px 12px;
 }
 .sechead h2 {
   font-size: 15px;
   font-weight: 700;
 }
+.hint {
+  font-size: 11.5px;
+  color: var(--ink3);
+  margin: 0 2px 12px;
+}
+
 .countryCard {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 14px;
-  padding: 14px 16px;
+  padding: 14px 14px;
   margin-bottom: 14px;
   box-shadow: var(--shadow);
 }
@@ -106,71 +112,132 @@
   color: var(--ink3);
   padding: 6px 2px;
 }
-.tableScroll {
+
+/* Grilla ancha estilo Excel */
+.gridScroll {
   overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
 }
-.tableScroll table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12.5px;
-}
-.tableScroll thead th {
-  text-align: left;
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--ink3);
-  font-weight: 600;
-  padding: 0 8px 8px;
-  border-bottom: 1px solid var(--line);
+.gridScroll table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
   white-space: nowrap;
 }
-.tableScroll tbody td {
+.gridScroll thead th {
+  background: var(--sub);
+  color: var(--ink3);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 8px 8px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: bottom;
+  text-align: left;
+}
+.gridScroll thead th.phaseHead {
+  white-space: normal;
+  min-width: 116px;
+  max-width: 116px;
+  line-height: 1.2;
+}
+.gridScroll thead th.phaseHead .w {
+  color: var(--ink3);
+  font-weight: 700;
+  font-size: 9px;
+}
+.gridScroll tbody td {
   padding: 6px 8px;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
 }
-.socCell {
+/* Columna sociedad fija a la izquierda */
+.stickyCol {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--panel);
   font-weight: 600;
   color: var(--ink);
-  white-space: nowrap;
+  min-width: 190px;
   border-right: 1px solid var(--line);
-  position: relative;
+}
+.gridScroll thead th.stickyCol {
+  z-index: 3;
+  background: var(--sub);
+}
+.socName {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 .rmSoc {
   color: var(--coral);
   font-size: 11px;
-  margin-left: 8px;
   opacity: 0.6;
 }
 .rmSoc:hover {
   opacity: 1;
 }
-.repCell {
+.prodCell {
   font-weight: 700;
   color: var(--ink2);
 }
-.sel,
-.num,
-.obs {
+.pctCell {
+  font-weight: 800;
+  text-align: center;
+}
+.statusCell .sbadge {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.codeInput {
+  width: 62px;
   border: 1px solid var(--line2);
   background: var(--bg);
   color: var(--ink);
-  border-radius: 7px;
-  padding: 6px 8px;
-  font-size: 12px;
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 11px;
 }
-.sel {
-  min-width: 130px;
-}
-.num {
-  width: 64px;
+.phaseCell {
   text-align: center;
 }
-.obs {
-  width: 100%;
-  min-width: 200px;
+.phaseCell .chk {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--brand);
+  cursor: pointer;
 }
+.phaseCell .dateInp {
+  display: block;
+  margin: 5px auto 0;
+  border: 1px solid var(--line2);
+  background: var(--bg);
+  color: var(--ink2);
+  border-radius: 6px;
+  padding: 2px 4px;
+  font-size: 10px;
+  width: 108px;
+}
+.obsInput {
+  min-width: 220px;
+  width: 100%;
+  border: 1px solid var(--line2);
+  background: var(--bg);
+  color: var(--ink);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 11.5px;
+}
+
+/* Alertas / pasos */
 .itemCard {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -206,5 +273,13 @@
   color: var(--ink2);
   border-radius: 8px;
   padding: 7px 10px;
+  font-size: 12px;
+}
+.sel {
+  border: 1px solid var(--line2);
+  background: var(--bg);
+  color: var(--ink);
+  border-radius: 7px;
+  padding: 6px 8px;
   font-size: 12px;
 }

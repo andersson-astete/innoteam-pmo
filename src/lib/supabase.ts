@@ -11,10 +11,20 @@ export type Status = 'init' | 'proc' | 'testing' | 'go' | 'client'
 export interface Phase {
   name: string
   weight: number
+  hasDate?: boolean
 }
 export interface ReportType {
   code: string
   name: string
+}
+export type Stage = 'inicio' | 'desarrollo' | 'uat' | 'produccion' | 'cerrado'
+export interface KeyUser {
+  name: string
+  role: string
+}
+export interface PhaseState {
+  done: boolean
+  date: string | null
 }
 export interface Project {
   id: string
@@ -24,6 +34,11 @@ export interface Project {
   brand_color: string
   phases: Phase[]
   report_types: ReportType[]
+  sponsor: string | null
+  project_lead: string | null
+  user_lead: string | null
+  stage: Stage
+  stage_order: number
   created_at: string
   updated_at: string
 }
@@ -34,6 +49,8 @@ export interface Country {
   name: string
   short_name: string | null
   sort_order: number
+  key_users: KeyUser[]
+  lead: string | null
 }
 export interface Society {
   id: string
@@ -46,10 +63,12 @@ export interface Deliverable {
   id: string
   society_id: string
   report_code: string
+  code: string | null
   last_phase: number
   percentage: number
   status: Status
   observation: string | null
+  phase_states: PhaseState[]
   updated_at: string
 }
 export interface Alert {
@@ -91,10 +110,12 @@ export interface FlatDeliverable {
   soc: string // nombre sociedad
   f: string // código país
   rep: string // report_code
+  code: string // código documento (LI10…)
   last: number
   pct: number
   est: Status
   obs: string
+  phase_states: PhaseState[]
 }
 
 // ---------- Lecturas ----------
@@ -158,10 +179,12 @@ export function flattenDeliverables(data: ProjectData): FlatDeliverable[] {
       soc: soc?.name || '—',
       f: country?.code || '—',
       rep: d.report_code,
+      code: d.code || '',
       last: d.last_phase,
       pct: d.percentage,
       est: d.status,
       obs: d.observation || '',
+      phase_states: d.phase_states || [],
     }
   })
 }

@@ -5,9 +5,9 @@ import { useParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { getCurrentUser } from '@/lib/auth'
 
-const ProjectOverview = dynamic(() => import('@/components/report/ProjectOverview'), { ssr: false })
+const ReportView = dynamic(() => import('@/components/report/ReportView'), { ssr: false })
 
-export default function ProjectOverviewPage() {
+export default function ProjectReportPage() {
   const params = useParams()
   const projectId = params.projectId as string
   const [canEdit, setCanEdit] = useState(false)
@@ -22,5 +22,5 @@ export default function ProjectOverviewPage() {
   }, [])
 
   if (!ready) return null
-  return <ProjectOverview projectId={projectId} canEdit={canEdit} />
+  return <ReportView projectId={projectId} canEdit={canEdit} />
 }

@@ -2,16 +2,8 @@
 
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import Link from 'next/link'
-import {
-  Chart as ChartJS,
-  ArcElement,
-  Tooltip,
-  RadialLinearScale,
-  PointElement,
-  LineElement,
-  Filler,
-} from 'chart.js'
-import { Doughnut, Radar } from 'react-chartjs-2'
+import ReactECharts from 'echarts-for-react'
+import 'echarts-gl'
 import {
   getProjectData,
   flattenDeliverables,
@@ -24,40 +16,40 @@ import {
   avgOf,
   bandColorHex,
   socList,
-  phaseProfile,
   estCounts,
   phaseCounts,
+  buildRiskMatrix,
+  type RiskItem,
 } from '@/lib/report'
 import styles from './report.module.css'
 
-ChartJS.register(ArcElement, Tooltip, RadialLinearScale, PointElement, LineElement, Filler)
-
-// Lee una variable CSS en runtime (sigue el tema claro/oscuro)
 function cv(name: string, fallback = '#888'): string {
   if (typeof window === 'undefined') return fallback
   const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
   return v || fallback
 }
-function hexToRgba(h: string, a: number): string {
-  h = (h || '').replace('#', '')
-  if (h.length === 3) h = h.split('').map((c) => c + c).join('')
-  const n = parseInt(h || '888888', 16)
-  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`
+const LEVEL_COLOR: Record<RiskItem['level'], string> = {
+  Crítico: '#F87171',
+  Alto: '#FB923C',
+  Medio: '#FBBF24',
+  Bajo: '#34D399',
 }
 
-interface Filters {
-  pais: string
-  estado: string
-  selSoc: string | null
+interface ModalData {
+  title: string
+  sub?: string
+  rows: { k: string; v: string }[]
+  note?: string
 }
 
 export default function ReportView({ projectId, canEdit }: { projectId: string; canEdit: boolean }) {
   const [data, setData] = useState<ProjectData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [filters, setFilters] = useState<Filters>({ pais: 'all', estado: 'all', selSoc: null })
+  const [pais, setPais] = useState('all')
+  const [estado, setEstado] = useState('all')
   const [themeTick, setThemeTick] = useState(0)
+  const [modal, setModal] = useState<ModalData | null>(null)
 
-  // Recargar al cambiar de proyecto
   useEffect(() => {
     let alive = true
     setLoading(true)
@@ -72,7 +64,6 @@ export default function ReportView({ projectId, canEdit }: { projectId: string; 
     }
   }, [projectId])
 
-  // Re-render de gráficos cuando cambia el tema (html.light)
   useEffect(() => {
     const obs = new MutationObserver(() => setThemeTick((t) => t + 1))
     obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
@@ -80,192 +71,299 @@ export default function ReportView({ projectId, canEdit }: { projectId: string; 
   }, [])
 
   const flat = useMemo<FlatDeliverable[]>(() => (data ? flattenDeliverables(data) : []), [data])
-  const phases = data?.project.phases || []
-  const reportTypes = data?.project.report_types || []
   const countries = data?.countries || []
+  const phases = data?.project.phases || []
 
   const fD = useMemo(
-    () =>
-      flat.filter(
-        (d) =>
-          (filters.pais === 'all' || d.f === filters.pais) &&
-          (filters.estado === 'all' || d.est === filters.estado)
-      ),
-    [flat, filters.pais, filters.estado]
+    () => flat.filter((d) => (pais === 'all' || d.f === pais) && (estado === 'all' || d.est === estado)),
+    [flat, pais, estado]
   )
 
-  const setPais = useCallback(
-    (p: string) => setFilters((f) => ({ ...f, pais: f.pais === p ? 'all' : p, selSoc: null })),
-    []
-  )
-  const setEstado = useCallback(
-    (e: string) => setFilters((f) => ({ ...f, estado: f.estado === e ? 'all' : e, selSoc: null })),
-    []
-  )
-  const reset = useCallback(() => setFilters({ pais: 'all', estado: 'all', selSoc: null }), [])
+  const reset = useCallback(() => {
+    setPais('all')
+    setEstado('all')
+  }, [])
 
   if (loading) return <div className={styles.loading}>Cargando reporte…</div>
   if (!data) return <div className={styles.loading}>Proyecto no encontrado.</div>
 
-  const countryName = (code: string) => countries.find((c) => c.code === code)?.name || code
   const countryShort = (code: string) => {
     const c = countries.find((x) => x.code === code)
     return c?.short_name || c?.name || code
   }
+  const countryName = (code: string) => countries.find((c) => c.code === code)?.name || code
 
   const avg = avgOf(fD)
-  const testing = fD.filter((x) => x.est === 'testing').length
-  const client = fD.filter((x) => x.est === 'client').length
-  const init = fD.filter((x) => x.est === 'init').length
-  const socN = new Set(fD.map((x) => x.soc)).size
-  const activeAlerts =
-    filters.pais === 'all'
-      ? data.alerts
-      : data.alerts.filter((a) => a.country_code === 'all' || a.country_code === filters.pais)
-
-  // -------- KPIs --------
-  const kpis = [
-    { lab: 'Avance Global', val: `${avg}%`, ic: '◑', icc: '#3B82F6', prog: avg, sub: 'ponderado del alcance' },
-    { lab: 'Entregables', val: `${fD.length}`, ic: '▤', icc: '#6D5FD4', sub: `${socN} sociedades · ${reportTypes.length} reportes` },
-    { lab: 'En pruebas', val: `${testing}`, ic: '⚑', icc: cv('--testc'), sub: 'pruebas integrales', est: 'testing' },
-    { lab: 'Lado cliente', val: `${client}`, ic: '👤', icc: cv('--clientc'), sub: 'en su ambiente', est: 'client' },
-    { lab: 'Etapa inicial', val: `${init}`, ic: '◔', icc: cv('--coral'), sub: 'por arrancar', est: 'init' },
-    { lab: 'Alertas', val: `${activeAlerts.length}`, ic: '⚠', icc: cv('--warn'), sub: 'activas en el filtro' },
-  ]
-
-  // -------- Gauge global --------
-  const gaugeCol = bandColorHex(avg)
-  const gaugeData = {
-    datasets: [
-      {
-        data: [avg, 100 - avg],
-        backgroundColor: [gaugeCol, cv('--track')],
-        borderWidth: 0,
-        circumference: 180,
-        rotation: 270,
-      },
-    ],
-  }
-  const gaugeOpts: any = {
-    cutout: '72%',
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { tooltip: { enabled: false }, legend: { display: false } },
-  }
-
-  // -------- Donut por estado --------
   const counts = estCounts(fD)
-  const donutKeys = (['testing', 'go', 'client', 'proc', 'init'] as Status[]).filter((k) => counts[k] > 0)
-  const donutData = {
-    labels: donutKeys.map((k) => EST[k].label),
-    datasets: [
-      {
-        data: donutKeys.map((k) => counts[k]),
-        backgroundColor: donutKeys.map((k) => cv(EST[k].cssVar)),
-        borderColor: cv('--panel'),
-        borderWidth: 3,
-        hoverOffset: 7,
-      },
-    ],
-  }
-  const donutOpts: any = {
-    cutout: '60%',
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { display: false }, tooltip: { enabled: true } },
-    onClick: (_e: any, el: any) => {
-      if (el.length) setEstado(donutKeys[el[0].index])
-    },
-  }
+  const societies = socList(flat)
+  const risks = buildRiskMatrix(fD, phases)
+  const criticalRisks = risks.filter((r) => r.level === 'Crítico' || r.level === 'Alto').length
 
-  // -------- Radar de fases --------
-  const radarSets: any[] = [
+  // ---- Colores tema ----
+  const ink3 = cv('--ink3')
+  const grid = cv('--grid')
+  const panel = cv('--panel')
+  const gaugeCol = bandColorHex(avg)
+
+  // ---- KPIs ----
+  const kUAT = fD.filter((x) => x.est === 'testing' || x.est === 'client').length
+  const kPRD = fD.filter((x) => x.est === 'go').length
+  const kpis = [
     {
-      label: 'Portafolio',
-      data: phaseProfile(flat, phases),
-      borderColor: cv('--ink3'),
-      backgroundColor: 'rgba(128,128,128,.12)',
-      borderWidth: 1.5,
-      pointRadius: 2,
-      pointBackgroundColor: cv('--ink3'),
+      lab: 'Avance Global',
+      val: `${avg}%`,
+      color: gaugeCol,
+      modal: (): ModalData => ({
+        title: 'Avance global',
+        sub: pais === 'all' ? 'Portafolio completo' : countryName(pais),
+        rows: countries.map((c) => ({ k: c.name, v: `${avgOf(flat.filter((x) => x.f === c.code))}%` })),
+        note: 'Promedio del avance de todos los entregables del alcance.',
+      }),
+    },
+    {
+      lab: 'Entregables',
+      val: `${fD.length}`,
+      color: cv('--brand'),
+      modal: (): ModalData => ({
+        title: 'Entregables',
+        rows: [
+          { k: 'Total', v: `${fD.length}` },
+          { k: 'Sociedades', v: `${new Set(fD.map((x) => x.soc)).size}` },
+          { k: 'Tipos de reporte', v: data.project.report_types.map((r) => r.code).join(', ') },
+        ],
+      }),
+    },
+    {
+      lab: 'En pruebas UAT',
+      val: `${kUAT}`,
+      color: cv('--testc'),
+      modal: (): ModalData => ({
+        title: 'En pruebas integrales (UAT)',
+        rows: fD
+          .filter((x) => x.est === 'testing' || x.est === 'client')
+          .map((x) => ({ k: `${x.soc} · ${x.rep}`, v: `${x.pct}%` })),
+        note: 'Entregables liberados al cliente para pruebas integrales.',
+      }),
+    },
+    {
+      lab: 'En producción',
+      val: `${kPRD}`,
+      color: cv('--ok'),
+      modal: (): ModalData => ({
+        title: 'En producción',
+        rows: fD.filter((x) => x.est === 'go').map((x) => ({ k: `${x.soc} · ${x.rep}`, v: `${x.pct}%` })),
+      }),
+    },
+    {
+      lab: 'Riesgos',
+      val: `${criticalRisks}`,
+      color: cv('--coral'),
+      modal: (): ModalData => ({
+        title: 'Riesgos priorizados',
+        rows: risks.slice(0, 12).map((r) => ({ k: `${r.label} (${r.level})`, v: `P${r.probability}·I${r.impact}=${r.score}` })),
+        note: 'Generados automáticamente del detalle (avance, fechas, fase).',
+      }),
     },
   ]
-  if (filters.pais !== 'all') {
-    radarSets.unshift({
-      label: countryShort(filters.pais),
-      data: phaseProfile(fD, phases),
-      borderColor: cv('--blue'),
-      backgroundColor: 'rgba(59,130,246,.18)',
-      borderWidth: 2,
-      pointRadius: 2.5,
-      pointBackgroundColor: cv('--blue'),
-    })
-  }
-  const radarData = { labels: phases.map((p) => p.name), datasets: radarSets }
-  const radarOpts: any = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      r: {
+
+  // ---- Velocímetro global ----
+  const gaugeOption = {
+    series: [
+      {
+        type: 'gauge',
+        startAngle: 210,
+        endAngle: -30,
         min: 0,
         max: 100,
-        ticks: { display: false, stepSize: 25 },
-        grid: { color: cv('--grid') },
-        angleLines: { color: cv('--grid') },
-        pointLabels: { color: cv('--ink3'), font: { size: 9 } },
+        progress: { show: true, width: 16, itemStyle: { color: gaugeCol } },
+        axisLine: { lineStyle: { width: 16, color: [[1, cv('--track')]] } },
+        axisTick: { show: false },
+        splitLine: { show: false },
+        axisLabel: { show: false },
+        pointer: { width: 5, length: '62%', itemStyle: { color: gaugeCol } },
+        anchor: { show: true, size: 14, itemStyle: { color: gaugeCol } },
+        detail: {
+          valueAnimation: true,
+          formatter: '{value}%',
+          fontSize: 32,
+          fontWeight: 800,
+          color: gaugeCol,
+          offsetCenter: [0, '42%'],
+        },
+        data: [{ value: avg }],
       },
+    ],
+  }
+
+  // ---- Barras apiladas: país × estado ----
+  const estKeys = (['testing', 'go', 'client', 'proc', 'init'] as Status[]).filter((k) => counts[k] > 0)
+  const paisCodes = countries.map((c) => c.code)
+  const stackedOption = {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    legend: { textStyle: { color: ink3, fontSize: 10 }, top: 0, itemHeight: 8 },
+    grid: { left: 34, right: 12, top: 34, bottom: 24 },
+    xAxis: { type: 'category', data: paisCodes.map(countryShort), axisLabel: { color: ink3, fontSize: 10 } },
+    yAxis: { type: 'value', axisLabel: { color: ink3 }, splitLine: { lineStyle: { color: grid } } },
+    series: estKeys.map((k) => ({
+      name: EST[k].label,
+      type: 'bar',
+      stack: 'x',
+      emphasis: { focus: 'series' },
+      itemStyle: { color: cv(EST[k].cssVar) },
+      data: paisCodes.map((code) => flat.filter((x) => x.f === code && x.est === k).length),
+    })),
+  }
+
+  // ---- Barras 3D: avance por país ----
+  const bar3dOption = {
+    tooltip: {},
+    visualMap: {
+      show: false,
+      min: 0,
+      max: 100,
+      dimension: 2,
+      inRange: { color: ['#FB923C', '#FBBF24', '#34D399'] },
     },
-    plugins: { legend: { display: false } },
+    xAxis3D: { type: 'category', data: paisCodes.map(countryShort), axisLabel: { color: ink3 } },
+    yAxis3D: { type: 'category', data: ['Avance'], axisLabel: { show: false } },
+    zAxis3D: { type: 'value', max: 100, axisLabel: { color: ink3 } },
+    grid3D: {
+      boxWidth: 110,
+      boxDepth: 18,
+      boxHeight: 70,
+      viewControl: { alpha: 18, beta: 20, distance: 190, autoRotate: false },
+      light: { main: { intensity: 1.3, shadow: true }, ambient: { intensity: 0.35 } },
+      axisLine: { lineStyle: { color: ink3 } },
+      splitLine: { lineStyle: { color: grid } },
+    },
+    series: [
+      {
+        type: 'bar3D',
+        shading: 'lambert',
+        bevelSize: 0.25,
+        data: paisCodes.map((code, i) => ({ value: [i, 0, avgOf(flat.filter((x) => x.f === code))] })),
+        itemStyle: { opacity: 0.92 },
+        emphasis: { itemStyle: { opacity: 1 } },
+      },
+    ],
   }
 
-  // -------- Heatmap país × reporte --------
-  const heatCodes = countries.map((c) => c.code)
+  // ---- Matriz de riesgos (scatter prob × impacto) ----
+  const riskOption = {
+    tooltip: {
+      formatter: (p: any) => `${p.data.name}<br/>Prob ${p.value[0]} · Impacto ${p.value[1]} · Puntaje ${p.value[2]}`,
+    },
+    grid: { left: 42, right: 18, top: 16, bottom: 40 },
+    xAxis: {
+      type: 'value',
+      name: 'Probabilidad',
+      nameLocation: 'middle',
+      nameGap: 26,
+      min: 0.5,
+      max: 5.5,
+      interval: 1,
+      axisLabel: { color: ink3 },
+      splitLine: { lineStyle: { color: grid } },
+    },
+    yAxis: {
+      type: 'value',
+      name: 'Impacto',
+      nameLocation: 'middle',
+      nameGap: 28,
+      min: 0.5,
+      max: 5.5,
+      interval: 1,
+      axisLabel: { color: ink3 },
+      splitLine: { lineStyle: { color: grid } },
+    },
+    series: [
+      {
+        type: 'scatter',
+        symbolSize: (d: number[]) => 14 + d[2] * 1.7,
+        data: risks.map((r) => ({
+          value: [r.probability, r.impact, r.score],
+          name: r.label,
+          itemStyle: { color: LEVEL_COLOR[r.level], opacity: 0.85, shadowBlur: 8, shadowColor: 'rgba(0,0,0,.3)' },
+        })),
+      },
+    ],
+  }
 
-  // -------- Funnel --------
-  const totF = fD.length || 1
+  // ---- Embudo por fase ----
   const fCounts = phaseCounts(fD, phases)
-  const g65 = fD.filter((x) => x.pct >= 65).length
-
-  // -------- Sociedades (tabla + detalle) --------
-  const societies = socList(flat).sort((a, b) => b.pct - a.pct)
-  const societiesFiltered =
-    filters.pais === 'all' ? societies : societies.filter((s) => s.f === filters.pais)
-
-  // -------- Detalle --------
-  let detailTitle = 'Portafolio completo'
-  let detailSub = `${countries.length} países · ${new Set(flat.map((x) => x.soc)).size} sociedades · ${flat.length} entregables`
-  let detailList = flat
-  if (filters.selSoc) {
-    detailList = flat.filter((d) => d.soc === filters.selSoc)
-    detailTitle = filters.selSoc
-    detailSub = countryName(detailList[0]?.f || '')
-  } else if (filters.pais !== 'all' || filters.estado !== 'all') {
-    detailList = fD
-    detailTitle = filters.pais !== 'all' ? countryName(filters.pais) : EST[filters.estado as Status].label
-    detailSub = `${new Set(detailList.map((x) => x.soc)).size} sociedades · ${detailList.length} entregables`
+  const funnelOption = {
+    tooltip: { trigger: 'item', formatter: '{b}: {c} entregables' },
+    series: [
+      {
+        type: 'funnel',
+        left: '4%',
+        right: '4%',
+        top: 8,
+        bottom: 8,
+        minSize: '18%',
+        maxSize: '100%',
+        sort: 'descending',
+        gap: 2,
+        label: { show: true, position: 'inside', color: '#fff', fontSize: 10, formatter: '{b}' },
+        itemStyle: { borderColor: panel, borderWidth: 1 },
+        emphasis: { label: { fontWeight: 700 } },
+        data: phases.map((p, i) => ({ name: p.name, value: fCounts[i] })),
+      },
+    ],
   }
-  const dAvg = avgOf(detailList)
-  const dTest = detailList.filter((x) => x.est === 'testing').length
-  const dClient = detailList.filter((x) => x.est === 'client').length
-  const dPend = detailList.filter((x) => x.est === 'proc' || x.est === 'init').length
+
+  // ---- Handlers de clic ----
+  const onPaisBarClick = (p: any) => {
+    const code = paisCodes[p.dataIndex]
+    if (!code) return
+    const list = flat.filter((x) => x.f === code)
+    setModal({
+      title: countryName(code),
+      sub: `${new Set(list.map((x) => x.soc)).size} sociedades · ${list.length} entregables`,
+      rows: socList(list).map((s) => ({ k: s.soc, v: `${s.pct}% · ${EST[s.est].label}` })),
+    })
+  }
+  const onRiskClick = (p: any) => {
+    const r = risks[p.dataIndex]
+    if (!r) return
+    setModal({
+      title: r.label,
+      sub: `Riesgo ${r.level} · puntaje ${r.score}`,
+      rows: [
+        { k: 'País', v: countryName(r.pais) },
+        { k: 'Probabilidad', v: `${r.probability} / 5` },
+        { k: 'Impacto', v: `${r.impact} / 5` },
+        { k: 'Puntaje', v: `${r.score} / 25` },
+        { k: 'Motivo', v: r.reason },
+      ],
+      note: 'Riesgo calculado automáticamente del detalle del proyecto.',
+    })
+  }
+  const onFunnelClick = (p: any) => {
+    const i = phases.findIndex((ph) => ph.name === p.name)
+    if (i < 0) return
+    const reached = fD.filter((x) => x.last >= i)
+    setModal({
+      title: p.name,
+      sub: `${reached.length} entregables alcanzaron esta fase · peso ${phases[i].weight}%`,
+      rows: reached.slice(0, 20).map((x) => ({ k: `${x.soc} · ${x.rep}`, v: `${x.pct}%` })),
+    })
+  }
 
   return (
     <div className={styles.wrap} key={themeTick}>
-      {/* Header */}
       <div className={styles.rhead}>
         <div className={styles.rtitle}>
           <h1>{data.project.name}</h1>
-          <p>
-            {data.project.subtitle || 'Reporte de seguimiento'} · Reporte en vivo
-          </p>
+          <p>{data.project.subtitle || 'Reporte de seguimiento'} · Reporte ejecutivo</p>
         </div>
         <div className={styles.ractions}>
-          <Link href="/dashboard" className={styles.btn}>
-            ← Proyectos
+          <Link href={`/dashboard/projects/${projectId}`} className={styles.btn}>
+            ← Proyecto
           </Link>
           {canEdit && (
             <Link href={`/dashboard/projects/${projectId}/edit`} className={styles.btn}>
-              ✎ Editar
+              ✎ Detalle
             </Link>
           )}
           <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={() => window.print()}>
@@ -274,337 +372,112 @@ export default function ReportView({ projectId, canEdit }: { projectId: string; 
         </div>
       </div>
 
-      {/* Filtro por país */}
+      {/* Filtros por país */}
       <div className={styles.filterbar}>
         <span className={styles.flabel}>País</span>
-        <span
-          className={`${styles.chip} ${filters.pais === 'all' ? styles.chipActive : ''}`}
-          onClick={reset}
-        >
+        <span className={`${styles.chip} ${pais === 'all' ? styles.chipActive : ''}`} onClick={reset}>
           Todos <span className={styles.n}>{flat.length}</span>
         </span>
-        {countries.map((c) => {
-          const n = flat.filter((x) => x.f === c.code).length
-          return (
-            <span
-              key={c.code}
-              className={`${styles.chip} ${filters.pais === c.code ? styles.chipActive : ''}`}
-              onClick={() => setPais(c.code)}
-            >
-              {countryShort(c.code)} <span className={styles.n}>{n}</span>
-            </span>
-          )
-        })}
-      </div>
-      <div className={styles.activeNote}>
-        {filters.pais !== 'all' && (
-          <span className={`${styles.fpill} ${styles.fpillPais}`}>País: {countryShort(filters.pais)}</span>
-        )}
-        {filters.estado !== 'all' && <span className={styles.fpill}>Estado: {EST[filters.estado as Status].label}</span>}
-        {filters.selSoc && <span className={styles.fpill}>Sociedad: {filters.selSoc}</span>}
-        {(filters.pais !== 'all' || filters.estado !== 'all' || filters.selSoc) ? (
+        {countries.map((c) => (
+          <span
+            key={c.code}
+            className={`${styles.chip} ${pais === c.code ? styles.chipActive : ''}`}
+            onClick={() => setPais((p) => (p === c.code ? 'all' : c.code))}
+          >
+            {countryShort(c.code)} <span className={styles.n}>{flat.filter((x) => x.f === c.code).length}</span>
+          </span>
+        ))}
+        {(pais !== 'all' || estado !== 'all') && (
           <button className={styles.freset} onClick={reset}>
-            limpiar filtros
+            limpiar
           </button>
-        ) : (
-          <span className={styles.fhint}>Haz clic en países, tarjetas, sociedades o segmentos para filtrar.</span>
         )}
       </div>
 
       {/* KPIs */}
       <div className={styles.kpis}>
-        {kpis.map((k) => {
-          const on = k.est && filters.estado === k.est
-          return (
-            <div
-              key={k.lab}
-              className={`${styles.kpi} ${k.est ? styles.kpiClickable : ''} ${on ? styles.kpiOn : ''}`}
-              onClick={k.est ? () => setEstado(k.est!) : undefined}
-            >
-              {k.est && <span className={styles.flt}>filtrar</span>}
-              <div className="lab">
-                <span className="ic" style={{ background: hexToRgba(k.icc, 0.16), color: k.icc }}>
-                  {k.ic}
-                </span>
-                {k.lab}
-              </div>
-              <div className="val">{k.val}</div>
-              <div className="sub">{k.sub}</div>
-              {typeof k.prog === 'number' && (
-                <div className="prog">
-                  <i style={{ width: `${k.prog}%`, background: bandColorHex(k.prog) }} />
-                </div>
-              )}
+        {kpis.map((k) => (
+          <div key={k.lab} className={`${styles.kpi} ${styles.clickable}`} onClick={() => setModal(k.modal())}>
+            <span className={styles.flt}>ver</span>
+            <div className="lab">{k.lab}</div>
+            <div className="val" style={{ color: k.color }}>
+              {k.val}
             </div>
-          )
-        })}
+          </div>
+        ))}
       </div>
 
-      {/* Gauge global + mini-gauges por país */}
-      <div className={`${styles.grid} ${styles.g21}`} style={{ marginTop: 14 }}>
-        <div className={`${styles.card} ${styles.gaugecard}`}>
-          <div className={styles.chead}>
-            <div>
-              <h2>Avance global del proyecto</h2>
-              <p className={styles.csub}>
-                {filters.pais === 'all' ? 'Portafolio completo' : countryName(filters.pais)}
-                {filters.estado !== 'all' ? ` · ${EST[filters.estado as Status].label}` : ''}
-              </p>
-            </div>
-            <span className={styles.badge}>{fD.length} entregables</span>
-          </div>
-          <div className={styles.gcenter}>
-            <div className={styles.gaugebox}>
-              <Doughnut data={gaugeData} options={gaugeOpts} />
-              <div className={styles.gaugelabel}>
-                <div className="big" style={{ color: gaugeCol }}>
-                  {avg}%
-                </div>
-                <div className="cap">avance promedio</div>
-              </div>
-            </div>
-            <div className={styles.gband}>
-              <span>
-                <i style={{ background: cv('--coral') }} /> &lt;30%
-              </span>
-              <span>
-                <i style={{ background: cv('--warn') }} /> 30–65%
-              </span>
-              <span>
-                <i style={{ background: cv('--ok') }} /> ≥65% (apto Go)
-              </span>
-            </div>
-          </div>
-        </div>
-
+      {/* Velocímetro + Barras apiladas */}
+      <div className={`${styles.grid} ${styles.g2}`} style={{ marginTop: 14 }}>
         <div className={styles.card}>
           <div className={styles.chead}>
             <div>
-              <h2>Avance por país</h2>
-              <p className={styles.csub}>Clic para filtrar</p>
+              <h2>Avance global</h2>
+              <p className={styles.csub}>
+                {pais === 'all' ? 'Portafolio completo' : countryName(pais)} · {fD.length} entregables
+              </p>
+            </div>
+            <span className={styles.chartHint}>clic en tarjetas ↑</span>
+          </div>
+          <ReactECharts option={gaugeOption} style={{ height: 240 }} notMerge />
+        </div>
+        <div className={styles.card}>
+          <div className={styles.chead}>
+            <div>
+              <h2>Entregables por país y estado</h2>
+              <p className={styles.csub}>Barras apiladas · clic en una barra</p>
             </div>
           </div>
-          <div className={styles.minigrid}>
-            {countries.map((c) => {
-              const dd = flat.filter((x) => x.f === c.code)
-              const v = avgOf(dd)
-              const col = bandColorHex(v)
-              return (
-                <div
-                  key={c.code}
-                  className={`${styles.mg} ${filters.pais === c.code ? styles.mgOn : ''}`}
-                  onClick={() => setPais(c.code)}
-                >
-                  <div className={styles.mgbox}>
-                    <Doughnut
-                      data={{
-                        datasets: [
-                          {
-                            data: [v, 100 - v],
-                            backgroundColor: [col, cv('--track')],
-                            borderWidth: 0,
-                            circumference: 180,
-                            rotation: 270,
-                          },
-                        ],
-                      }}
-                      options={gaugeOpts}
-                    />
-                    <div className={styles.mgval} style={{ color: col }}>
-                      {v}%
-                    </div>
-                  </div>
-                  <div className={styles.mgname}>{countryShort(c.code)}</div>
-                  <div className={styles.mgsub}>{dd.length} entregables</div>
-                </div>
-              )
-            })}
-          </div>
+          <ReactECharts
+            option={stackedOption}
+            style={{ height: 240 }}
+            notMerge
+            onEvents={{ click: onPaisBarClick }}
+          />
         </div>
       </div>
 
-      {/* Donut por estado + Radar de fases */}
+      {/* Barras 3D + Matriz de riesgos */}
       <div className={`${styles.grid} ${styles.g2}`}>
         <div className={styles.card}>
           <div className={styles.chead}>
             <div>
-              <h2>Composición por estado</h2>
-              <p className={styles.csub}>Clic en un segmento para filtrar</p>
+              <h2>Avance por país (3D)</h2>
+              <p className={styles.csub}>Vista tridimensional · gira con el mouse</p>
             </div>
           </div>
-          <div className={styles.chartbox} style={{ height: 240 }}>
-            {donutKeys.length ? (
-              <Doughnut data={donutData} options={donutOpts} />
-            ) : (
-              <div className={styles.loading}>Sin datos</div>
-            )}
-          </div>
-          <div className={styles.legend}>
-            {donutKeys.map((k) => (
-              <div className="li" key={k} onClick={() => setEstado(k)} style={{ cursor: 'pointer' }}>
-                <span className="sw" style={{ background: cv(EST[k].cssVar) }} />
-                {EST[k].label}
-                <b>{counts[k]}</b>
-                <small>{Math.round((counts[k] / (fD.length || 1)) * 100)}%</small>
-              </div>
-            ))}
-          </div>
+          <ReactECharts option={bar3dOption} style={{ height: 300 }} notMerge />
         </div>
-
         <div className={styles.card}>
           <div className={styles.chead}>
             <div>
-              <h2>Perfil por fase</h2>
-              <p className={styles.csub}>
-                {filters.pais === 'all' ? '% que superó cada fase' : `${countryShort(filters.pais)} vs portafolio`}
-              </p>
+              <h2>Matriz de riesgos</h2>
+              <p className={styles.csub}>Automática · probabilidad × impacto · clic en un punto</p>
             </div>
+            <span className={styles.badge}>{risks.length} riesgos</span>
           </div>
-          <div className={styles.chartbox} style={{ height: 300 }}>
-            <Radar data={radarData} options={radarOpts} />
+          <ReactECharts option={riskOption} style={{ height: 260 }} notMerge onEvents={{ click: onRiskClick }} />
+          <div className={styles.riskLegend}>
+            {(['Crítico', 'Alto', 'Medio', 'Bajo'] as const).map((l) => (
+              <span key={l}>
+                <i style={{ background: LEVEL_COLOR[l] }} /> {l}
+              </span>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Heatmap + Funnel */}
+      {/* Embudo + Próximos pasos */}
       <div className={`${styles.grid} ${styles.g2}`}>
-        <div className={styles.card}>
-          <div className={styles.chead}>
-            <div>
-              <h2>Mapa de calor · país × reporte</h2>
-              <p className={styles.csub}>% de avance promedio</p>
-            </div>
-          </div>
-          <div className={styles.heatrow}>
-            <div />
-            {reportTypes.map((r) => (
-              <div className={styles.heathdr} key={r.code} title={r.name}>
-                {r.code}
-              </div>
-            ))}
-          </div>
-          {heatCodes.map((code) => (
-            <div className={styles.heatrow} key={code}>
-              <div className={styles.heatlab}>{countryShort(code)}</div>
-              {reportTypes.map((r) => {
-                const v = avgOf(flat.filter((x) => x.f === code && x.rep === r.code))
-                const col = bandColorHex(v)
-                const a = 0.12 + 0.5 * (v / 100)
-                return (
-                  <div
-                    key={r.code}
-                    className={styles.heatcell}
-                    style={{ background: hexToRgba(col, a), borderColor: hexToRgba(col, 0.35) }}
-                    title={`${countryName(code)} · ${r.name}: ${v}%`}
-                  >
-                    {v}
-                    <small>%</small>
-                  </div>
-                )
-              })}
-            </div>
-          ))}
-        </div>
-
         <div className={styles.card}>
           <div className={styles.chead}>
             <div>
               <h2>Embudo por fase</h2>
-              <p className={styles.csub}>Entregables que alcanzaron cada fase</p>
+              <p className={styles.csub}>Entregables que alcanzaron cada fase · clic para detalle</p>
             </div>
           </div>
-          <div className={styles.funnel}>
-            {phases.map((p, i) => {
-              const v = fCounts[i]
-              const w = Math.round((v / totF) * 100)
-              return (
-                <div className={styles.row} key={i}>
-                  <div className={styles.fl}>
-                    <span className={styles.w}>{p.weight}%</span>
-                    {p.name}
-                  </div>
-                  <div className={styles.ft}>
-                    <div
-                      className={styles.ff}
-                      style={{ width: `${w}%`, background: `linear-gradient(90deg,#2b62c9,${cv('--blue')})` }}
-                    />
-                  </div>
-                  <div className={styles.fv}>
-                    <b>{v}</b> · {w}%
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-          <div className={styles.callout}>
-            <span className="ci">i</span>
-            <p>
-              <b>{g65}</b> entregables ≥65% (aptos para Go) · <b>{testing}</b> en pruebas integrales.
-            </p>
-          </div>
+          <ReactECharts option={funnelOption} style={{ height: 340 }} notMerge onEvents={{ click: onFunnelClick }} />
         </div>
-      </div>
-
-      {/* Alertas + Próximos pasos */}
-      <div className={`${styles.grid} ${styles.g21}`}>
-        <div className={styles.card}>
-          <div className={styles.chead}>
-            <div>
-              <h2>Riesgos y alertas</h2>
-              <p className={styles.csub}>Ordenadas por severidad</p>
-            </div>
-            <span className={styles.badge}>{activeAlerts.length} activas</span>
-          </div>
-          <div className={styles.alerts}>
-            {data.alerts
-              .slice()
-              .sort(
-                (a, b) =>
-                  (({ Alta: 0, Media: 1, Baja: 2, Gestión: 1.5 } as any)[a.severity] ?? 3) -
-                  (({ Alta: 0, Media: 1, Baja: 2, Gestión: 1.5 } as any)[b.severity] ?? 3)
-              )
-              .map((a) => {
-                const dim =
-                  filters.pais !== 'all' && a.country_code !== 'all' && a.country_code !== filters.pais
-                const sevCol =
-                  a.severity === 'Alta'
-                    ? cv('--red')
-                    : a.severity === 'Media'
-                      ? cv('--warn')
-                      : a.severity === 'Baja'
-                        ? cv('--warn')
-                        : cv('--violet')
-                return (
-                  <div className={`${styles.alert} ${dim ? 'dim' : ''}`} key={a.id}>
-                    <div className={styles.ahead}>
-                      <span className="sev" style={{ background: sevCol }} />
-                      <span className="at">{a.title}</span>
-                      <span className="atag" style={{ background: hexToRgba(sevCol, 0.13), color: sevCol }}>
-                        {a.severity}
-                      </span>
-                    </div>
-                    {a.impact && (
-                      <div className={styles.arow}>
-                        <span className="k">Impacto</span>
-                        <span className="v">{a.impact}</span>
-                      </div>
-                    )}
-                    {a.action && (
-                      <div className={styles.arow}>
-                        <span className="k">Acción</span>
-                        <span className="v">{a.action}</span>
-                      </div>
-                    )}
-                    <div className={styles.afoot}>
-                      <span className="owner">{a.owner}</span>
-                      <span className="due">{a.due}</span>
-                    </div>
-                  </div>
-                )
-              })}
-          </div>
-        </div>
-
         <div className={styles.card}>
           <div className={styles.chead}>
             <div>
@@ -630,130 +503,82 @@ export default function ReportView({ projectId, canEdit }: { projectId: string; 
         </div>
       </div>
 
-      {/* Detalle */}
-      <div className={styles.card} style={{ marginBottom: 14 }}>
-        <div className={`${styles.detail}`}>
-          <div className="dhead" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-            <span className="dtitle" style={{ fontSize: 15, fontWeight: 700 }}>
-              {detailTitle}
-            </span>
-            <span className="dsub" style={{ fontSize: 11.5, color: 'var(--ink3)' }}>
-              {detailSub}
-            </span>
-          </div>
-          <div className={styles.dstats}>
-            <div className={styles.dstat}>
-              <div className="dv" style={{ color: bandColorHex(dAvg) }}>
-                {dAvg}%
-              </div>
-              <div className="dl">Avance</div>
-            </div>
-            <div className={styles.dstat}>
-              <div className="dv">{dTest}</div>
-              <div className="dl">En pruebas</div>
-            </div>
-            <div className={styles.dstat}>
-              <div className="dv">{dClient}</div>
-              <div className="dl">Lado cliente</div>
-            </div>
-            <div className={styles.dstat}>
-              <div className="dv">{dPend}</div>
-              <div className="dl">Pendientes</div>
-            </div>
-          </div>
-          {filters.selSoc && (
-            <div className={styles.repcards}>
-              {detailList.map((r) => {
-                const ph = r.last >= 0 ? phases[r.last]?.name || '—' : 'Sin iniciar'
-                return (
-                  <div className={styles.repcard} key={r.id}>
-                    <div className="rh">
-                      <span className="rc" style={{ background: hexToRgba('#3B82F6', 0.16), color: '#3B82F6' }}>
-                        {r.rep}
-                      </span>
-                      <span className="rp" style={{ color: bandColorHex(r.pct) }}>
-                        {r.pct}%
-                      </span>
-                    </div>
-                    <div className="rph">{ph}</div>
-                    {r.obs && <div className="ro">{r.obs}</div>}
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Tabla de sociedades */}
+      {/* Sociedades por país */}
       <div className={styles.card}>
         <div className={styles.chead}>
           <div>
-            <h2>Sociedades</h2>
-            <p className={styles.csub}>{societiesFiltered.length} sociedades · clic para ver detalle</p>
+            <h2>Sociedades por país</h2>
+            <p className={styles.csub}>Clic en una sociedad para su detalle</p>
           </div>
         </div>
-        <div className={styles.tableScroll}>
-          <table>
-            <thead>
-              <tr>
-                <th>Sociedad</th>
-                <th>País</th>
-                <th>Reportes</th>
-                <th>Avance</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {societiesFiltered.map((s) => (
-                <tr
-                  key={s.soc}
-                  className={filters.selSoc === s.soc ? 'selected' : ''}
-                  onClick={() =>
-                    setFilters((f) => ({ ...f, selSoc: f.selSoc === s.soc ? null : s.soc }))
-                  }
-                >
-                  <td className={styles.soc}>{s.soc}</td>
-                  <td>{countryShort(s.f)}</td>
-                  <td>
-                    <div className={styles.reps}>
-                      {s.reps
-                        .slice()
-                        .sort((a, b) => a.rep.localeCompare(b.rep))
-                        .map((r) => (
-                          <span
-                            className={styles.rep}
-                            key={r.id}
-                            title={`${r.rep}: ${r.pct}%`}
-                            style={{ borderColor: hexToRgba(bandColorHex(r.pct), 0.5), color: bandColorHex(r.pct) }}
-                          >
-                            {r.rep}
-                          </span>
-                        ))}
-                    </div>
-                  </td>
-                  <td>
-                    <div className={styles.progress}>
-                      <span className={styles.bar} style={{ width: 90 }}>
-                        <i style={{ width: `${s.pct}%`, background: bandColorHex(s.pct) }} />
-                      </span>
-                      <span style={{ color: bandColorHex(s.pct) }}>{s.pct}%</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span
-                      className={styles.tbadge}
-                      style={{ background: hexToRgba(cv(EST[s.est].cssVar), 0.15), color: cv(EST[s.est].cssVar) }}
-                    >
-                      {EST[s.est].label}
+        <div className={styles.tree}>
+          {countries
+            .filter((c) => pais === 'all' || c.code === pais)
+            .map((c) => {
+              const socs = societies.filter((s) => s.f === c.code)
+              return (
+                <div className={styles.treeCol} key={c.code}>
+                  <div className={styles.treeHead}>
+                    <span>{c.name}</span>
+                    <span style={{ color: bandColorHex(avgOf(flat.filter((x) => x.f === c.code))) }}>
+                      {avgOf(flat.filter((x) => x.f === c.code))}%
                     </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                  {socs.map((s) => (
+                    <div
+                      className={styles.treeItem}
+                      key={s.soc}
+                      onClick={() =>
+                        setModal({
+                          title: s.soc,
+                          sub: `${countryName(c.code)} · ${EST[s.est].label}`,
+                          rows: s.reps.map((r) => ({
+                            k: `${r.rep} (${r.code || '—'})`,
+                            v: `${r.pct}% · ${r.last >= 0 ? phases[r.last]?.name || '—' : 'Sin iniciar'}`,
+                          })),
+                          note: s.reps.find((r) => r.obs)?.obs || undefined,
+                        })
+                      }
+                    >
+                      <span>{s.soc}</span>
+                      <span className={styles.tpct} style={{ color: bandColorHex(s.pct) }}>
+                        {s.pct}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )
+            })}
         </div>
       </div>
+
+      {/* Modal */}
+      {modal && (
+        <div className={styles.modalOverlay} onClick={() => setModal(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHead}>
+              <div>
+                <h3>{modal.title}</h3>
+                {modal.sub && <div className="sub">{modal.sub}</div>}
+              </div>
+              <button className={styles.modalClose} onClick={() => setModal(null)}>
+                ✕
+              </button>
+            </div>
+            {modal.rows.length === 0 ? (
+              <div className={styles.modalNote}>Sin elementos.</div>
+            ) : (
+              modal.rows.map((r, i) => (
+                <div className={styles.mrow} key={i}>
+                  <span className="mk">{r.k}</span>
+                  <span className="mv">{r.v}</span>
+                </div>
+              ))
+            )}
+            {modal.note && <div className={styles.modalNote}>{modal.note}</div>}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

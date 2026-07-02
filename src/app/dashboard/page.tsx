@@ -2,10 +2,17 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { getProjects, getProjectData, flattenDeliverables, type Project } from '@/lib/supabase'
+import {
+  getProjects,
+  getProjectData,
+  flattenDeliverables,
+  type Project,
+  type Stage,
+} from '@/lib/supabase'
 import { getCurrentUser } from '@/lib/auth'
 import { avgOf } from '@/lib/report'
-import styles from './home.module.css'
+import { mutate } from '@/lib/mutate'
+import styles from './projects.module.css'
 
 interface ProjectCard extends Project {
   avg: number
@@ -14,17 +21,29 @@ interface ProjectCard extends Project {
   deliverables: number
 }
 
-export default function DashboardHome() {
+const STAGES: { key: Stage; label: string; color: string }[] = [
+  { key: 'inicio', label: 'Inicio', color: '#FB923C' },
+  { key: 'desarrollo', label: 'En desarrollo', color: '#FBBF24' },
+  { key: 'uat', label: 'En pruebas UAT', color: '#A78BFA' },
+  { key: 'produccion', label: 'En producción', color: '#34D399' },
+  { key: 'cerrado', label: 'Cerrado', color: '#6E7C99' },
+]
+const stageMeta = (s: Stage) => STAGES.find((x) => x.key === s) || STAGES[0]
+const barColor = (v: number) => (v >= 65 ? 'var(--ok)' : v >= 30 ? 'var(--warn)' : 'var(--coral)')
+
+export default function ProjectsPage() {
   const [projects, setProjects] = useState<ProjectCard[]>([])
   const [loading, setLoading] = useState(true)
   const [canCreate, setCanCreate] = useState(false)
+  const [view, setView] = useState<'list' | 'kanban'>('kanban')
+  const [dragId, setDragId] = useState<string | null>(null)
+  const [overCol, setOverCol] = useState<Stage | null>(null)
 
   useEffect(() => {
     getCurrentUser().then((u) => {
       const role = u?.user_metadata?.role
       setCanCreate(role === 'pm' || role === 'admin-ti')
     })
-
     ;(async () => {
       const list = await getProjects()
       const cards = await Promise.all(
@@ -45,73 +64,124 @@ export default function DashboardHome() {
     })()
   }, [])
 
+  const moveToStage = async (id: string, stage: Stage) => {
+    const proj = projects.find((p) => p.id === id)
+    if (!proj || proj.stage === stage) return
+    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, stage } : p)))
+    try {
+      await mutate('projects', 'update', { id, data: { stage } })
+    } catch {
+      // revertir en error
+      setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, stage: proj.stage } : p)))
+    }
+  }
+
   return (
     <div className={styles.container}>
-      <div
-        className={styles.header}
-        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}
-      >
+      <div className={styles.header}>
         <div>
           <h1>Proyectos</h1>
           <p>Seguimiento de implementaciones · InnoTeam</p>
         </div>
-        {canCreate && (
-          <Link
-            href="/dashboard/projects/new"
-            style={{
-              background: 'var(--brand)',
-              color: '#fff',
-              padding: '10px 16px',
-              borderRadius: 10,
-              fontSize: 13,
-              fontWeight: 600,
-              textDecoration: 'none',
-            }}
-          >
-            + Crear proyecto
-          </Link>
-        )}
+        <div className={styles.headActions}>
+          <div className={styles.toggle}>
+            <button className={view === 'list' ? styles.on : ''} onClick={() => setView('list')}>
+              ☰ Lista
+            </button>
+            <button className={view === 'kanban' ? styles.on : ''} onClick={() => setView('kanban')}>
+              ▦ Kanban
+            </button>
+          </div>
+          {canCreate && (
+            <Link href="/dashboard/projects/new" className={styles.createBtn}>
+              + Crear proyecto
+            </Link>
+          )}
+        </div>
       </div>
 
       {loading ? (
         <p style={{ color: 'var(--ink3)' }}>Cargando proyectos…</p>
-      ) : projects.length === 0 ? (
-        <div className={styles.info}>
-          <p>
-            Aún no hay proyectos.{' '}
-            {canCreate ? 'Crea el primero con el botón de arriba.' : 'Pide a un PM o Admin TI que cree uno.'}
-          </p>
-        </div>
-      ) : (
+      ) : view === 'list' ? (
         <div className={styles.grid}>
-          {projects.map((p) => (
-            <Link key={p.id} href={`/dashboard/projects/${p.id}`} className={styles.card}>
-              <div className={styles.cardContent}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span
-                    style={{
-                      width: 12,
-                      height: 12,
-                      borderRadius: 4,
-                      background: p.brand_color,
-                      display: 'inline-block',
-                    }}
-                  />
+          {projects.map((p) => {
+            const sm = stageMeta(p.stage)
+            return (
+              <Link key={p.id} href={`/dashboard/projects/${p.id}`} className={styles.card}>
+                <div className={styles.cardTop}>
+                  <span className={styles.dot} style={{ background: p.brand_color }} />
                   <h2>{p.name}</h2>
                 </div>
-                {p.subtitle && <p className={styles.sub}>{p.subtitle}</p>}
-                <div
-                  className={styles.val}
-                  style={{ color: p.avg >= 65 ? 'var(--ok)' : p.avg >= 30 ? 'var(--warn)' : 'var(--coral)' }}
-                >
+                {p.subtitle && <div className={styles.sub}>{p.subtitle}</div>}
+                <div className={styles.big} style={{ color: barColor(p.avg) }}>
                   {p.avg}%
                 </div>
-                <p className={styles.sub}>
+                <div className={styles.sub}>
                   {p.countries} países · {p.societies} sociedades · {p.deliverables} entregables
-                </p>
+                </div>
+                <span
+                  className={styles.stagePill}
+                  style={{ background: `${sm.color}22`, color: sm.color }}
+                >
+                  {sm.label}
+                </span>
+              </Link>
+            )
+          })}
+        </div>
+      ) : (
+        <div className={styles.board}>
+          {STAGES.map((st) => {
+            const items = projects.filter((p) => p.stage === st.key)
+            return (
+              <div
+                key={st.key}
+                className={`${styles.col} ${overCol === st.key ? styles.colOver : ''}`}
+                onDragOver={(e) => {
+                  e.preventDefault()
+                  setOverCol(st.key)
+                }}
+                onDragLeave={() => setOverCol((c) => (c === st.key ? null : c))}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  setOverCol(null)
+                  if (dragId) moveToStage(dragId, st.key)
+                  setDragId(null)
+                }}
+              >
+                <div className={styles.colHead}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: 2, background: st.color }} />
+                    {st.label}
+                  </span>
+                  <span className={styles.colCount}>{items.length}</span>
+                </div>
+                {items.map((p) => (
+                  <Link
+                    key={p.id}
+                    href={`/dashboard/projects/${p.id}`}
+                    className={styles.kcard}
+                    draggable
+                    onDragStart={() => setDragId(p.id)}
+                    onDragEnd={() => setDragId(null)}
+                  >
+                    <div className={styles.kcardTop}>
+                      <span className={styles.dot} style={{ background: p.brand_color }} />
+                      <h3>{p.name}</h3>
+                    </div>
+                    <div className={styles.kmeta}>
+                      {p.countries} países · {p.societies} sociedades
+                    </div>
+                    <div className={styles.kbar}>
+                      <i style={{ width: `${p.avg}%`, background: barColor(p.avg) }} />
+                    </div>
+                    <div className={styles.kmeta}>{p.avg}% de avance</div>
+                  </Link>
+                ))}
+                {items.length === 0 && <div className={styles.empty}>Arrastra aquí</div>}
               </div>
-            </Link>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

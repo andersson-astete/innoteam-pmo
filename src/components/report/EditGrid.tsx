@@ -10,17 +10,23 @@ import {
   type Deliverable,
   type Alert,
   type Step,
+  type PhaseState,
 } from '@/lib/supabase'
-import { EST } from '@/lib/report'
+import { EST, computePercentage, deriveStatus, lastDonePhase } from '@/lib/report'
 import { mutate } from '@/lib/mutate'
 import styles from './edit.module.css'
 
-const STATUSES = Object.keys(EST) as (keyof typeof EST)[]
+const CODE_BY_REPORT: Record<string, string> = { BG: 'LI10', DRE: 'LI20', FF: 'LI30' }
+
+function statusColor(s: string) {
+  const v = (EST as any)[s]?.cssVar || '--ink3'
+  return `var(${v})`
+}
 
 export default function EditGrid({ projectId }: { projectId: string }) {
   const [data, setData] = useState<ProjectData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [saved, setSaved] = useState<string>('')
+  const [saved, setSaved] = useState('')
 
   const reload = useCallback(async () => {
     const d = await getProjectData(projectId)
@@ -34,37 +40,89 @@ export default function EditGrid({ projectId }: { projectId: string }) {
 
   const flash = (msg = 'Guardado ✓') => {
     setSaved(msg)
-    setTimeout(() => setSaved(''), 1500)
+    setTimeout(() => setSaved(''), 1400)
   }
 
   if (loading) return <div className={styles.loading}>Cargando…</div>
   if (!data) return <div className={styles.loading}>Proyecto no encontrado.</div>
 
   const { project, countries, societies, deliverables, alerts, steps } = data
-  const reportTypes = project.report_types
   const phases = project.phases
+  const reportTypes = project.report_types
 
-  // ---------- Países ----------
+  // Normaliza phase_states a la longitud de fases
+  const norm = (del: Deliverable): PhaseState[] =>
+    phases.map((_, i) => del.phase_states?.[i] || { done: false, date: null })
+
+  const delFor = (societyId: string, code: string) =>
+    deliverables.find((d) => d.society_id === societyId && d.report_code === code)
+
+  // Guarda phase_states + recalcula % / status / last_phase
+  const savePhases = async (del: Deliverable, states: PhaseState[]) => {
+    const percentage = computePercentage(states, phases)
+    const status = deriveStatus(states, phases)
+    const last_phase = lastDonePhase(states)
+    setData((prev) =>
+      prev
+        ? {
+            ...prev,
+            deliverables: prev.deliverables.map((d) =>
+              d.id === del.id ? { ...d, phase_states: states, percentage, status, last_phase } : d
+            ),
+          }
+        : prev
+    )
+    try {
+      await mutate('deliverables', 'update', {
+        id: del.id,
+        data: { phase_states: states, percentage, status, last_phase },
+      })
+      flash()
+    } catch {
+      reload()
+    }
+  }
+
+  const togglePhase = (del: Deliverable, i: number) => {
+    const states = norm(del)
+    const ns = states.map((s, j) => (j === i ? { ...s, done: !s.done } : s))
+    savePhases(del, ns)
+  }
+  const setPhaseDate = (del: Deliverable, i: number, date: string) => {
+    const states = norm(del)
+    const ns = states.map((s, j) => (j === i ? { ...s, date: date || null } : s))
+    savePhases(del, ns)
+  }
+
+  const patchDel = async (del: Deliverable, patch: Partial<Deliverable>) => {
+    setData((prev) =>
+      prev ? { ...prev, deliverables: prev.deliverables.map((d) => (d.id === del.id ? { ...d, ...patch } : d)) } : prev
+    )
+    await mutate('deliverables', 'update', { id: del.id, data: patch })
+    flash()
+  }
+
+  // Países
   const addCountry = async () => {
     const code = prompt('Código del país (p.ej. PERU):')?.trim()
     if (!code) return
     const name = prompt('Nombre del país:', code)?.trim() || code
     await mutate('countries', 'insert', {
-      data: { project_id: projectId, code, name, short_name: name, sort_order: countries.length },
+      data: { project_id: projectId, code, name, short_name: name, sort_order: countries.length, key_users: [] },
     })
     flash()
     reload()
   }
   const deleteCountry = async (c: Country) => {
-    if (!confirm(`¿Eliminar el país ${c.name} y todas sus sociedades?`)) return
+    if (!confirm(`¿Eliminar el país ${c.name} y sus sociedades?`)) return
     await mutate('countries', 'delete', { id: c.id })
     flash('Eliminado')
     reload()
   }
 
-  // ---------- Sociedades ----------
+  // Sociedades (+ entregables por tipo de reporte con phase_states vacíos)
   const addSociety = async (country: Country) => {
-    const name = prompt(`Nueva sociedad en ${country.name}:`)?.trim()
+    const name = prompt(`Nueva sociedad/empresa en ${country.name}:`)?.trim()
     if (!name) return
     const soc = await mutate('societies', 'insert', {
       data: {
@@ -74,13 +132,15 @@ export default function EditGrid({ projectId }: { projectId: string }) {
         sort_order: societies.filter((s) => s.country_id === country.id).length,
       },
     })
-    // Crear un entregable por cada tipo de reporte
+    const emptyStates = phases.map(() => ({ done: false, date: null }))
     const rows = reportTypes.map((r) => ({
       society_id: soc.row.id,
       report_code: r.code,
-      last_phase: -1,
+      code: CODE_BY_REPORT[r.code] || '',
+      phase_states: emptyStates,
       percentage: 0,
       status: 'init',
+      last_phase: -1,
       observation: '',
     }))
     if (rows.length) await mutate('deliverables', 'insertMany', { data: rows })
@@ -94,41 +154,12 @@ export default function EditGrid({ projectId }: { projectId: string }) {
     reload()
   }
 
-  // ---------- Entregables (edición inline con guardado optimista) ----------
-  const patchDeliverable = async (del: Deliverable, patch: Partial<Deliverable>) => {
-    // optimista
-    setData((prev) =>
-      prev
-        ? { ...prev, deliverables: prev.deliverables.map((d) => (d.id === del.id ? { ...d, ...patch } : d)) }
-        : prev
-    )
-    try {
-      await mutate('deliverables', 'update', { id: del.id, data: patch })
-      flash()
-    } catch {
-      reload()
-    }
-  }
-
-  const delFor = (societyId: string, code: string): Deliverable | undefined =>
-    deliverables.find((d) => d.society_id === societyId && d.report_code === code)
-
-  // ---------- Alertas ----------
+  // Alertas / pasos
   const addAlert = async () => {
     const title = prompt('Título de la alerta:')?.trim()
     if (!title) return
     await mutate('alerts', 'insert', {
-      data: {
-        project_id: projectId,
-        country_code: 'all',
-        severity: 'Media',
-        title,
-        impact: '',
-        action: '',
-        owner: '',
-        due: '',
-        sort_order: alerts.length,
-      },
+      data: { project_id: projectId, country_code: 'all', severity: 'Media', title, impact: '', action: '', owner: '', due: '', sort_order: alerts.length },
     })
     flash()
     reload()
@@ -144,8 +175,6 @@ export default function EditGrid({ projectId }: { projectId: string }) {
     flash('Eliminado')
     reload()
   }
-
-  // ---------- Pasos ----------
   const addStep = async () => {
     const title = prompt('Título del próximo paso:')?.trim()
     if (!title) return
@@ -171,24 +200,29 @@ export default function EditGrid({ projectId }: { projectId: string }) {
     <div className={styles.wrap}>
       <div className={styles.head}>
         <div>
-          <h1>Editar · {project.name}</h1>
-          <p>Los cambios se guardan automáticamente. El reporte se recalcula al instante.</p>
+          <h1>Detalle · {project.name}</h1>
+          <p>El % y el Status se calculan solos según las fases completadas. Cada cambio se guarda automáticamente.</p>
         </div>
         <div className={styles.actions}>
           {saved && <span className={styles.saved}>{saved}</span>}
           <Link href={`/dashboard/projects/${projectId}`} className={styles.btn}>
+            ← Resumen
+          </Link>
+          <Link href={`/dashboard/projects/${projectId}/report`} className={styles.btn}>
             Ver reporte →
           </Link>
         </div>
       </div>
 
-      {/* Países + sociedades + grilla de entregables */}
       <div className={styles.sechead}>
-        <h2>Países, sociedades y entregables</h2>
+        <h2>Países, sociedades y fases</h2>
         <button className={styles.btnSm} onClick={addCountry}>
           + País
         </button>
       </div>
+      <p className={styles.hint}>
+        Marca cada fase completada y elige su fecha en el calendario. El avance sube por el peso de la fase.
+      </p>
 
       {countries.map((country) => {
         const socs = societies.filter((s) => s.country_id === country.id)
@@ -211,17 +245,22 @@ export default function EditGrid({ projectId }: { projectId: string }) {
             {socs.length === 0 ? (
               <p className={styles.empty}>Sin sociedades. Agrega una.</p>
             ) : (
-              <div className={styles.tableScroll}>
+              <div className={styles.gridScroll}>
                 <table>
                   <thead>
                     <tr>
-                      <th>Sociedad</th>
-                      <th>Reporte</th>
-                      <th>Fase</th>
+                      <th className={styles.stickyCol}>Sociedad / Empresa</th>
+                      <th>Cód</th>
+                      <th>Entregable</th>
                       <th>%</th>
-                      <th>Estado</th>
+                      <th>Status</th>
+                      {phases.map((p, i) => (
+                        <th className={styles.phaseHead} key={i}>
+                          {p.name}
+                          <div className="w">peso {p.weight}%</div>
+                        </th>
+                      ))}
                       <th>Observación</th>
-                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -229,68 +268,64 @@ export default function EditGrid({ projectId }: { projectId: string }) {
                       reportTypes.map((rt, ri) => {
                         const del = delFor(s.id, rt.code)
                         if (!del) return null
+                        const states = norm(del)
                         return (
                           <tr key={del.id}>
                             {ri === 0 ? (
-                              <td rowSpan={reportTypes.length} className={styles.socCell}>
-                                {s.name}
-                                <button className={styles.rmSoc} onClick={() => deleteSociety(s)} title="Eliminar sociedad">
-                                  ✕
-                                </button>
+                              <td className={styles.stickyCol} rowSpan={reportTypes.length}>
+                                <div className={styles.socName}>
+                                  <span>{s.name}</span>
+                                  <button className={styles.rmSoc} title="Eliminar sociedad" onClick={() => deleteSociety(s)}>
+                                    ✕
+                                  </button>
+                                </div>
                               </td>
                             ) : null}
-                            <td className={styles.repCell}>{rt.code}</td>
-                            <td>
-                              <select
-                                className={styles.sel}
-                                value={del.last_phase}
-                                onChange={(e) => patchDeliverable(del, { last_phase: Number(e.target.value) })}
-                              >
-                                <option value={-1}>Sin iniciar</option>
-                                {phases.map((p, i) => (
-                                  <option key={i} value={i}>
-                                    {i + 1}. {p.name}
-                                  </option>
-                                ))}
-                              </select>
-                            </td>
                             <td>
                               <input
-                                className={styles.num}
-                                type="number"
-                                min={0}
-                                max={100}
-                                value={del.percentage}
-                                onChange={(e) =>
-                                  patchDeliverable(del, { percentage: Math.max(0, Math.min(100, Number(e.target.value))) })
-                                }
+                                className={styles.codeInput}
+                                defaultValue={del.code || ''}
+                                onBlur={(e) => e.target.value !== (del.code || '') && patchDel(del, { code: e.target.value })}
                               />
                             </td>
-                            <td>
-                              <select
-                                className={styles.sel}
-                                value={del.status}
-                                onChange={(e) => patchDeliverable(del, { status: e.target.value as any })}
-                              >
-                                {STATUSES.map((st) => (
-                                  <option key={st} value={st}>
-                                    {EST[st].label}
-                                  </option>
-                                ))}
-                              </select>
+                            <td className={styles.prodCell}>{rt.code}</td>
+                            <td className={styles.pctCell} style={{ color: del.percentage >= 65 ? 'var(--ok)' : del.percentage >= 30 ? 'var(--warn)' : 'var(--coral)' }}>
+                              {del.percentage}%
                             </td>
+                            <td className={styles.statusCell}>
+                              <span
+                                className="sbadge"
+                                style={{ background: `color-mix(in srgb, ${statusColor(del.status)} 16%, transparent)`, color: statusColor(del.status) }}
+                              >
+                                {(EST as any)[del.status]?.label || del.status}
+                              </span>
+                            </td>
+                            {phases.map((p, i) => (
+                              <td className={styles.phaseCell} key={i}>
+                                <input
+                                  type="checkbox"
+                                  className="chk"
+                                  checked={!!states[i]?.done}
+                                  onChange={() => togglePhase(del, i)}
+                                />
+                                {p.hasDate && (
+                                  <input
+                                    type="date"
+                                    className="dateInp"
+                                    value={states[i]?.date || ''}
+                                    onChange={(e) => setPhaseDate(del, i, e.target.value)}
+                                  />
+                                )}
+                              </td>
+                            ))}
                             <td>
                               <input
-                                className={styles.obs}
+                                className={styles.obsInput}
                                 defaultValue={del.observation || ''}
                                 placeholder="Observación…"
-                                onBlur={(e) => {
-                                  if (e.target.value !== (del.observation || ''))
-                                    patchDeliverable(del, { observation: e.target.value })
-                                }}
+                                onBlur={(e) => e.target.value !== (del.observation || '') && patchDel(del, { observation: e.target.value })}
                               />
                             </td>
-                            <td></td>
                           </tr>
                         )
                       })
@@ -305,7 +340,7 @@ export default function EditGrid({ projectId }: { projectId: string }) {
 
       {/* Alertas */}
       <div className={styles.sechead}>
-        <h2>Riesgos y alertas</h2>
+        <h2>Riesgos y alertas (manuales)</h2>
         <button className={styles.btnSm} onClick={addAlert}>
           + Alerta
         </button>
@@ -313,11 +348,7 @@ export default function EditGrid({ projectId }: { projectId: string }) {
       {alerts.map((a) => (
         <div className={styles.itemCard} key={a.id}>
           <div className={styles.itemRow}>
-            <input
-              className={styles.itemTitle}
-              defaultValue={a.title}
-              onBlur={(e) => e.target.value !== a.title && patchAlert(a, { title: e.target.value })}
-            />
+            <input className={styles.itemTitle} defaultValue={a.title} onBlur={(e) => e.target.value !== a.title && patchAlert(a, { title: e.target.value })} />
             <select className={styles.sel} value={a.severity} onChange={(e) => patchAlert(a, { severity: e.target.value })}>
               {['Alta', 'Media', 'Baja', 'Gestión'].map((s) => (
                 <option key={s} value={s}>
