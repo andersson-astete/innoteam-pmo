@@ -6,10 +6,8 @@ import ReactECharts from 'echarts-for-react'
 import * as echarts from 'echarts'
 import {
   getProjectData,
-  getSettings,
   flattenDeliverables,
   type ProjectData,
-  type Settings,
   type FlatDeliverable,
 } from '@/lib/supabase'
 import { avgOf } from '@/lib/report'
@@ -202,14 +200,14 @@ const pmoStyles = `
   .action-owner { display: inline-flex; align-items: center; gap: 0.35rem; margin-top: 0.5rem; font-size: 0.75rem; font-weight: 600; color: #1c3a91; background: #e0e7ff; padding: 0.2rem 0.6rem; border-radius: 6px; }
 `
 
-export default function ReportView({ projectId, canEdit }: { projectId: string; canEdit: boolean }) {
+export default function ReportView({ projectId }: { projectId: string; canEdit: boolean }) {
   const [data, setData] = useState<ProjectData | null>(null)
   const [loading, setLoading] = useState(true)
   const [filterCountry, setFilterCountry] = useState('ALL')
 
   useEffect(() => {
     let alive = true
-    Promise.all([getProjectData(projectId), getSettings()]).then(([d]) => {
+    getProjectData(projectId).then((d) => {
       if (alive) {
         setData(d)
         setLoading(false)
