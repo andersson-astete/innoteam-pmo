@@ -87,13 +87,13 @@
   overflow-x: auto;
 }
 
-table {
+.tableScroll table {
   width: 100%;
   border-collapse: collapse;
   font-size: 12.5px;
 }
 
-thead th {
+.tableScroll thead th {
   text-align: left;
   font-size: 10.5px;
   text-transform: uppercase;
@@ -104,16 +104,16 @@ thead th {
   border-bottom: 1px solid var(--line);
 }
 
-tbody tr {
+.tableScroll tbody tr {
   transition: all 0.12s;
   cursor: pointer;
 }
 
-tbody tr:hover {
+.tableScroll tbody tr:hover {
   background: rgba(128, 128, 128, 0.06);
 }
 
-tbody td {
+.tableScroll tbody td {
   padding: 11px 12px;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;

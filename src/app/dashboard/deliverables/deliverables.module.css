@@ -64,13 +64,13 @@
   overflow-x: auto;
 }
 
-table {
+.tableScroll table {
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
 }
 
-thead th {
+.tableScroll thead th {
   text-align: left;
   font-size: 10px;
   text-transform: uppercase;
@@ -81,7 +81,7 @@ thead th {
   border-bottom: 1px solid var(--line);
 }
 
-tbody td {
+.tableScroll tbody td {
   padding: 10px;
   border-bottom: 1px solid var(--line);
 }
