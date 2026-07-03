@@ -15,45 +15,63 @@ const pmoStyles = `
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
   
   .pmo-dashboard {
-    --bg-main: #f1f5f9;
-    --bg-card: #ffffff;
-    --bg-header: #ffffff;
+    --bg-base: #f8fafc;
     --text-main: #0f172a;
     --text-muted: #64748b;
-    --border-color: #e2e8f0;
-    --hover-shadow: rgba(0, 0, 0, 0.08);
-    --badge-bg: #f8fafc;
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    --glass-header: rgba(255, 255, 255, 0.95);
+    --glass-border: rgba(255, 255, 255, 0.5);
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+    --badge-bg: rgba(241, 245, 249, 0.8);
     --accent-color: #1c3a91;
     --stepper-bg: #e2e8f0;
     --stepper-active: #009036;
     
     font-family: 'Plus Jakarta Sans', sans-serif;
-    background-color: var(--bg-main);
+    background-color: var(--bg-base);
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(28, 58, 145, 0.08) 0px, transparent 50%), 
+      radial-gradient(at 100% 0%, rgba(0, 144, 54, 0.08) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(28, 58, 145, 0.08) 0px, transparent 50%);
+    background-attachment: fixed;
     color: var(--text-main);
     min-height: 100vh;
     padding-bottom: 3rem;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: all 0.4s ease;
   }
   
   .pmo-dashboard.dark {
-    --bg-main: #020617;
-    --bg-card: #0f172a;
-    --bg-header: #0f172a;
+    --bg-base: #020617;
     --text-main: #f8fafc;
     --text-muted: #94a3b8;
-    --border-color: #1e293b;
-    --hover-shadow: rgba(255, 255, 255, 0.05);
-    --badge-bg: #1e293b;
+    --glass-bg: rgba(15, 23, 42, 0.7);
+    --glass-header: rgba(15, 23, 42, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.05);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    --badge-bg: rgba(30, 41, 59, 0.8);
     --accent-color: #3b82f6;
     --stepper-bg: #334155;
     --stepper-active: #10b981;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%), 
+      radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.15) 0px, transparent 50%);
   }
   
-  .pmo-header { background: var(--bg-header); padding: 1.5rem 2rem; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--border-color); transition: all 0.3s ease; }
+  /* Glassmorphism Elements */
+  .glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+  }
+
+  .pmo-header { background: var(--glass-header); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 1.5rem 2rem; border-bottom: 1px solid var(--glass-border); box-shadow: var(--glass-shadow); position: sticky; top: 0; z-index: 10; transition: all 0.3s ease; }
   .pmo-header-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
   .pmo-project-meta { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem; }
 
-  .meta-badge { display: flex; align-items: center; gap: 0.5rem; background: var(--badge-bg); border: 1px solid var(--border-color); padding: 0.35rem 0.85rem; border-radius: 99px; }
+  .meta-badge { display: flex; align-items: center; gap: 0.5rem; background: var(--badge-bg); border: 1px solid var(--glass-border); padding: 0.35rem 0.85rem; border-radius: 99px; }
   .meta-badge svg { color: var(--text-muted); width: 14px; height: 14px; }
   .meta-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 700; }
   .meta-value { font-size: 0.75rem; font-weight: 700; color: var(--text-main); margin-left: 0.25rem; }
@@ -64,22 +82,35 @@ const pmoStyles = `
   .pmo-container { max-width: 1440px; margin: 0 auto; padding: 1.5rem; }
 
   /* Insights Panel */
-  .pmo-insights { background: linear-gradient(to right, rgba(28, 58, 145, 0.05), rgba(0, 144, 54, 0.05)); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; }
-  .pmo-dashboard.dark .pmo-insights { background: linear-gradient(to right, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1)); }
-  .insights-icon { background: var(--bg-card); padding: 0.5rem; border-radius: 50%; color: var(--accent-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-  .insights-text { font-size: 0.85rem; font-weight: 600; color: var(--text-main); line-height: 1.5; }
+  .pmo-insights { border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; position: relative; overflow: hidden; }
+  .pmo-insights::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to right, rgba(28, 58, 145, 0.05), rgba(0, 144, 54, 0.05)); z-index: 0; }
+  .pmo-dashboard.dark .pmo-insights::before { background: linear-gradient(to right, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1)); }
+  .insights-icon { background: var(--glass-bg); padding: 0.5rem; border-radius: 50%; color: var(--accent-color); box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; z-index: 1; }
+  .insights-text { font-size: 0.85rem; font-weight: 600; color: var(--text-main); line-height: 1.5; position: relative; z-index: 1; }
   .insights-text strong { color: var(--accent-color); font-weight: 800; }
 
   /* Stepper */
-  .pmo-stepper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; background: var(--bg-card); padding: 1rem 1.5rem; border-radius: 12px; border: 1px solid var(--border-color); position: relative; }
-  .stepper-line { position: absolute; top: 50%; left: 1.5rem; right: 1.5rem; height: 2px; background: var(--stepper-bg); transform: translateY(-50%); z-index: 0; }
-  .step-item { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; background: var(--bg-card); padding: 0 0.5rem; }
-  .step-circle { width: 20px; height: 20px; border-radius: 50%; background: var(--stepper-bg); border: 3px solid var(--bg-card); display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+  .pmo-stepper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding: 1.25rem 1.5rem; border-radius: 16px; position: relative; }
+  .stepper-line { position: absolute; top: 50%; left: 1.5rem; right: 1.5rem; height: 3px; background: var(--stepper-bg); transform: translateY(-50%); z-index: 0; }
+  .step-item { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 0 0.5rem; cursor: pointer; transition: transform 0.2s; }
+  .step-item:hover { transform: translateY(-2px); }
+  .step-item::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 10px; background: var(--glass-bg); z-index: -1; filter: blur(5px); }
+  .step-circle { width: 22px; height: 22px; border-radius: 50%; background: var(--stepper-bg); border: 4px solid var(--glass-bg); display: flex; align-items: center; justify-content: center; transition: all 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
   .step-item.active .step-circle { background: var(--stepper-active); box-shadow: 0 0 0 4px rgba(0, 144, 54, 0.2); }
   .pmo-dashboard.dark .step-item.active .step-circle { box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2); }
   .step-item.completed .step-circle { background: var(--stepper-active); }
-  .step-label { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .step-label { font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; background: var(--glass-bg); padding: 0.1rem 0.4rem; border-radius: 4px; }
   .step-item.active .step-label { color: var(--text-main); }
+
+  /* Staggered Animations & Grid */
+  .animate-stagger > * { opacity: 0; animation: fadeUpIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  .animate-stagger > *:nth-child(1) { animation-delay: 0.05s; }
+  .animate-stagger > *:nth-child(2) { animation-delay: 0.10s; }
+  .animate-stagger > *:nth-child(3) { animation-delay: 0.15s; }
+  .animate-stagger > *:nth-child(4) { animation-delay: 0.20s; }
+  .animate-stagger > *:nth-child(5) { animation-delay: 0.25s; }
+  .animate-stagger > *:nth-child(6) { animation-delay: 0.30s; }
+  .animate-stagger > *:nth-child(7) { animation-delay: 0.35s; }
 
   .pmo-grid-kpi { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem; }
   @media (max-width: 1280px) { .pmo-grid-kpi { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
@@ -87,71 +118,93 @@ const pmoStyles = `
   @media (max-width: 480px) { .pmo-grid-kpi { grid-template-columns: repeat(1, minmax(0, 1fr)); } }
 
   .pmo-card {
-    background: var(--bg-card); border-radius: 16px; padding: 1.25rem; border: 1px solid var(--border-color);
-    transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden;
+    border-radius: 16px; padding: 1.25rem; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden;
   }
   .pmo-card.clickable { cursor: pointer; }
-  .pmo-card.clickable:hover { box-shadow: 0 10px 20px -3px var(--hover-shadow); transform: translateY(-2px); border-color: #cbd5e1; }
+  .pmo-card.clickable:hover { box-shadow: 0 15px 30px -5px rgba(0,0,0,0.1); transform: translateY(-4px); border-color: rgba(255,255,255,0.8); }
+  .pmo-dashboard.dark .pmo-card.clickable:hover { box-shadow: 0 15px 30px -5px rgba(0,0,0,0.5); border-color: rgba(255,255,255,0.2); }
   
-  .sparkline-container { position: absolute; bottom: 0; left: 0; right: 0; height: 50%; opacity: 0.2; pointer-events: none; z-index: 0; }
+  .sparkline-container { position: absolute; bottom: 0; left: 0; right: 0; height: 50%; opacity: 0.25; pointer-events: none; z-index: 0; }
   .pmo-card-content { position: relative; z-index: 1; }
 
   .kpi-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
-  .kpi-title { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 800; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .kpi-icon { color: var(--border-color); width: 20px; height: 20px; }
-  .kpi-value { font-size: 2.25rem; font-weight: 800; color: var(--text-main); line-height: 1; letter-spacing: -0.025em; }
+  
+  /* Financial Tooltips */
+  .tooltip-trigger { position: relative; cursor: help; display: inline-block; }
+  .tooltip-trigger::after {
+    content: attr(data-tooltip); position: absolute; bottom: 130%; left: 50%; transform: translateX(-50%) translateY(10px);
+    background: var(--text-main); color: var(--bg-base); padding: 0.6rem 0.8rem; border-radius: 8px; font-size: 0.75rem; font-weight: 600;
+    white-space: normal; width: max-content; max-width: 220px; opacity: 0; pointer-events: none; transition: all 0.2s; z-index: 100;
+    text-transform: none; text-align: center; letter-spacing: 0; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+  }
+  .tooltip-trigger::before {
+    content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%) translateY(10px);
+    border-width: 6px; border-style: solid; border-color: var(--text-main) transparent transparent transparent;
+    opacity: 0; transition: all 0.2s;
+  }
+  .tooltip-trigger:hover::after, .tooltip-trigger:hover::before { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .kpi-title { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 800; color: var(--text-muted); }
+  .kpi-icon { color: var(--text-muted); width: 20px; height: 20px; opacity: 0.5; }
+  .kpi-value { font-size: 2.5rem; font-weight: 800; color: var(--text-main); line-height: 1; letter-spacing: -0.025em; }
   
   .kpi-value.danger { color: #dc2626; }
+  .pmo-dashboard.dark .kpi-value.danger { color: #ef4444; }
   .kpi-value.success { color: #10b981; }
-  .kpi-value.warning { color: #eab308; }
+  .kpi-value.warning { color: #d97706; }
+  .pmo-dashboard.dark .kpi-value.warning { color: #f59e0b; }
 
   .pmo-section-title { font-size: 1rem; font-weight: 800; color: var(--text-main); margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem; }
-  .pmo-section-title::before { content: ''; display: block; width: 4px; height: 14px; background: var(--stepper-active); border-radius: 2px; }
+  .pmo-section-title::before { content: ''; display: block; width: 4px; height: 16px; background: var(--accent-color); border-radius: 2px; }
 
-  .filter-group { display: flex; flex-wrap: wrap; gap: 0.35rem; background: var(--badge-bg); padding: 0.35rem; border-radius: 10px; border: 1px solid var(--border-color); }
-  .filter-btn { padding: 0.35rem 1rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; border: none; background: transparent; color: var(--text-muted); transition: all 0.2s ease; }
+  .filter-group { display: flex; flex-wrap: wrap; gap: 0.35rem; background: var(--badge-bg); padding: 0.35rem; border-radius: 12px; border: 1px solid var(--glass-border); }
+  .filter-btn { padding: 0.4rem 1rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; border: none; background: transparent; color: var(--text-muted); transition: all 0.2s ease; }
   .filter-btn:hover { color: var(--text-main); }
-  .filter-btn.active { background: var(--bg-card); color: var(--text-main); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .filter-btn.active { background: var(--glass-bg); color: var(--text-main); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
   
-  .btn-action { display: flex; align-items: center; gap: 0.4rem; background: var(--accent-color); color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease; }
-  .btn-action:hover { opacity: 0.9; transform: translateY(-1px); }
-  .btn-action.secondary { background: var(--badge-bg); color: var(--text-main); border: 1px solid var(--border-color); }
-  .btn-action.secondary:hover { background: var(--border-color); }
+  .btn-action { display: flex; align-items: center; gap: 0.4rem; background: var(--accent-color); color: white; border: none; padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+  .btn-action:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 6px 10px -2px rgba(0,0,0,0.15); }
+  .btn-action.secondary { background: var(--badge-bg); color: var(--text-main); border: 1px solid var(--glass-border); box-shadow: none; }
+  .btn-action.secondary:hover { background: var(--glass-border); transform: translateY(-1px); }
   .btn-action.success { background: #009036; }
   .btn-action.success:hover { background: #007a2d; }
 
-  /* Modal */
-  .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(6px); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1rem; animation: fadeIn 0.2s ease-out; }
-  .modal-content { background: var(--bg-card); border-radius: 20px; width: 100%; max-width: 900px; height: 85vh; max-height: 800px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 1px solid var(--border-color); }
-  .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--bg-header); }
-  .modal-header h2 { margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-main); }
-  .modal-search { padding: 1rem 1.5rem; background: var(--badge-bg); border-bottom: 1px solid var(--border-color); }
-  .search-input { width: 100%; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-family: inherit; font-size: 0.85rem; font-weight: 600; outline: none; transition: border-color 0.2s; }
-  .search-input:focus { border-color: var(--accent-color); }
-  .modal-close { background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.2s; }
-  .modal-close:hover { background: var(--border-color); color: var(--text-main); }
+  /* Modals */
+  .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1rem; animation: fadeIn 0.3s ease-out; }
+  .modal-content { border-radius: 24px; width: 100%; max-width: 950px; height: 85vh; max-height: 800px; display: flex; flex-direction: column; animation: modalZoom 0.4s cubic-bezier(0.16, 1, 0.3, 1); overflow: hidden; }
+  .modal-header { padding: 1.25rem 1.75rem; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.02); }
+  .pmo-dashboard.dark .modal-header { background: rgba(255,255,255,0.02); }
+  .modal-header h2 { margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--text-main); }
+  .modal-search { padding: 1rem 1.75rem; background: var(--badge-bg); border-bottom: 1px solid var(--glass-border); }
+  .search-input { width: 100%; padding: 0.85rem 1.25rem; border-radius: 10px; border: 1px solid var(--glass-border); background: var(--glass-bg); color: var(--text-main); font-family: inherit; font-size: 0.9rem; font-weight: 600; outline: none; transition: all 0.2s; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+  .search-input:focus { border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+  .modal-close { background: var(--badge-bg); border: 1px solid var(--glass-border); font-size: 1.2rem; cursor: pointer; color: var(--text-muted); width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s; }
+  .modal-close:hover { background: var(--text-main); color: var(--bg-base); transform: rotate(90deg); }
   .modal-body { padding: 0; overflow-y: auto; flex: 1; }
   
   .data-table { width: 100%; border-collapse: collapse; text-align: left; }
-  .data-table th { padding: 0.85rem 1.25rem; background: var(--badge-bg); color: var(--text-muted); font-weight: 800; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 2; }
-  .data-table td { padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--border-color); font-size: 0.8rem; color: var(--text-main); font-weight: 500; }
+  .data-table th { padding: 1rem 1.75rem; background: var(--badge-bg); color: var(--text-muted); font-weight: 800; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--glass-border); position: sticky; top: 0; z-index: 2; backdrop-filter: blur(10px); }
+  .data-table td { padding: 1rem 1.75rem; border-bottom: 1px solid var(--glass-border); font-size: 0.85rem; color: var(--text-main); font-weight: 600; }
   .data-table tr:hover td { background: var(--badge-bg); }
 
   /* Printing */
   @media print {
-    body, .pmo-dashboard { background: white !important; color: black !important; }
+    body, .pmo-dashboard { background: white !important; color: black !important; background-image: none !important; }
     .pmo-header { position: relative; box-shadow: none; border-bottom: 2px solid #000; }
     .filter-group, .btn-action, .pmo-insights, .pmo-stepper { display: none !important; }
-    .pmo-card { break-inside: avoid; border: 1px solid #ccc; box-shadow: none; }
+    .pmo-card, .glass-panel { break-inside: avoid; border: 1px solid #ccc; box-shadow: none; background: white !important; backdrop-filter: none; }
     .pmo-container { padding: 0; max-width: 100%; }
     .data-table th { background: #eee !important; color: #000 !important; }
   }
 
+  @keyframes fadeUpIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes modalZoom { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 `
 
 type ModalState = { isOpen: boolean; title: string; data: FlatDeliverable[] }
+type AlertModalState = { isOpen: boolean; title: string; data: any[] }
 
 const IconUser = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
 const IconTarget = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
@@ -170,7 +223,7 @@ const getSparklineOption = (data: number[], color: string) => ({
   grid: { left: -10, right: -10, top: 0, bottom: -10 },
   xAxis: { type: 'category', show: false, data: [1,2,3,4,5,6] },
   yAxis: { type: 'value', show: false },
-  series: [{ type: 'line', data, smooth: true, lineStyle: { width: 2, color }, symbol: 'none', areaStyle: { color, opacity: 0.1 } }]
+  series: [{ type: 'line', data, smooth: true, lineStyle: { width: 3, color }, symbol: 'none', areaStyle: { color, opacity: 0.15 } }]
 })
 
 export default function ReportView({ projectId }: { projectId: string; canEdit?: boolean }) {
@@ -182,6 +235,7 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
   const [filterPhase, setFilterPhase] = useState('ALL')
   
   const [modal, setModal] = useState<ModalState>({ isOpen: false, title: '', data: [] })
+  const [alertModal, setAlertModal] = useState<AlertModalState>({ isOpen: false, title: '', data: [] })
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
 
@@ -229,13 +283,19 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
     link.click()
   }
 
-  // Action Plan smart parser
   const getDueStatus = (due: string | null) => {
     if (!due || due.toLowerCase().includes('definir')) return { status: 'missing', label: 'Sin Fecha' }
     const d = new Date(due)
     if (!isNaN(d.getTime()) && d < new Date()) return { status: 'overdue', label: due }
     return { status: 'ontime', label: due }
   }
+
+  // Sorted Action Plan (Smart Table)
+  const sortedSteps = [...data.steps].sort((a, b) => {
+    const dateA = a.due && !a.due.toLowerCase().includes('definir') ? new Date(a.due).getTime() : 9999999999999;
+    const dateB = b.due && !b.due.toLowerCase().includes('definir') ? new Date(b.due).getTime() : 9999999999999;
+    return dateA - dateB;
+  })
 
   // --- COMPACT NUMERIC METRICS ---
   const totalDeliverables = fD.length
@@ -250,7 +310,7 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
   const criticalRiskCount = criticalDeliverables.length
   
   const totalSocieties = Array.from(new Set(fD.map(d => d.soc))).length
-  const totalAlerts = data.alerts.length // Alerts are project-wide in this simplified model
+  const totalAlerts = data.alerts.length
   const totalSteps = data.steps.length
   const overdueSteps = data.steps.filter(s => getDueStatus(s.due).status === 'overdue').length
   const riskExposureNum = Math.min(100, (criticalRiskCount / (totalDeliverables || 1)) * 100)
@@ -272,14 +332,12 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
     </>
   )
 
-  // Pie & Donut logic (Using independent datasets to allow cross-filtering)
+  // Pie & Donut logic
   const statusCounts = dataByCountry.reduce((acc, curr) => {
     acc[curr.est] = (acc[curr.est] || 0) + 1; return acc
   }, {} as Record<string, number>)
-  
   const statusChartData = Object.entries(statusCounts).map(([k, v]) => ({ name: statusLabels[k as keyof typeof statusLabels] || k, value: v }))
 
-  // Stepper Logic: Based on dataByCountry to not break when clicking phase
   let currentPhaseIndex = 0;
   let maxPhaseCount = 0;
   phaseOrder.forEach((phase, idx) => {
@@ -290,7 +348,6 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
   })
   if (overallProgressNum === 100) currentPhaseIndex = 4;
 
-  const countryCodes = ['ALL', ...countries.map(c => c.code)] // used for quick mapping
   const geoPieData = countries.map(c => {
     const count = dataByPhase.filter(x => x.f === c.code).length
     return { name: c.name, value: count, code: c.code }
@@ -301,10 +358,8 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
     return (
-      (item.f && item.f.toLowerCase().includes(term)) ||
-      (item.soc && item.soc.toLowerCase().includes(term)) ||
-      (item.code && item.code.toLowerCase().includes(term)) ||
-      (item.rep && item.rep.toLowerCase().includes(term)) ||
+      (item.f && item.f.toLowerCase().includes(term)) || (item.soc && item.soc.toLowerCase().includes(term)) ||
+      (item.code && item.code.toLowerCase().includes(term)) || (item.rep && item.rep.toLowerCase().includes(term)) ||
       (item.est && statusLabels[item.est as keyof typeof statusLabels]?.toLowerCase().includes(term))
     );
   })
@@ -312,34 +367,13 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
   const labelColor = isDarkMode ? '#cbd5e1' : '#475569'
 
   // ECharts Configurations
-  const chartGaugeProgress = {
-    series: [{
-      type: 'gauge', startAngle: 180, endAngle: 0, min: 0, max: 100, splitNumber: 10,
-      itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: '#3b82f6' }, { offset: 1, color: '#10b981' }]) },
-      progress: { show: true, width: 14, roundCap: true }, pointer: { show: false },
-      axisLine: { lineStyle: { width: 14, color: [[1, isDarkMode ? '#334155' : '#f1f5f9']] }, roundCap: true }, axisTick: { show: false }, splitLine: { show: false }, axisLabel: { show: false },
-      title: { show: false },
-      detail: { valueAnimation: true, offsetCenter: [0, '-10%'], fontSize: 26, fontWeight: 800, color: isDarkMode ? '#f8fafc' : '#0f172a', formatter: '{value}%' },
-      data: [{ value: overallProgressNum, name: 'AVANCE' }]
-    }]
-  }
-
-  const chartGaugeRisk = {
-    series: [{
-      type: 'gauge', startAngle: 180, endAngle: 0, min: 0, max: 100, splitNumber: 10,
-      itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: '#fbbf24' }, { offset: 1, color: '#dc2626' }]) },
-      progress: { show: true, width: 14, roundCap: true }, pointer: { show: false },
-      axisLine: { lineStyle: { width: 14, color: [[1, isDarkMode ? '#334155' : '#f1f5f9']] }, roundCap: true }, axisTick: { show: false }, splitLine: { show: false }, axisLabel: { show: false },
-      title: { show: false },
-      detail: { valueAnimation: true, offsetCenter: [0, '-10%'], fontSize: 26, fontWeight: 800, color: '#dc2626', formatter: '{value}%' },
-      data: [{ value: parseFloat(riskExposure), name: 'RIESGO' }]
-    }]
-  }
+  const chartGaugeProgress = { series: [{ type: 'gauge', startAngle: 180, endAngle: 0, min: 0, max: 100, splitNumber: 10, itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: '#3b82f6' }, { offset: 1, color: '#10b981' }]) }, progress: { show: true, width: 14, roundCap: true }, pointer: { show: false }, axisLine: { lineStyle: { width: 14, color: [[1, isDarkMode ? '#334155' : '#f1f5f9']] }, roundCap: true }, axisTick: { show: false }, splitLine: { show: false }, axisLabel: { show: false }, title: { show: false }, detail: { valueAnimation: true, offsetCenter: [0, '-10%'], fontSize: 26, fontWeight: 800, color: isDarkMode ? '#f8fafc' : '#0f172a', formatter: '{value}%' }, data: [{ value: overallProgressNum, name: 'AVANCE' }] }] }
+  const chartGaugeRisk = { series: [{ type: 'gauge', startAngle: 180, endAngle: 0, min: 0, max: 100, splitNumber: 10, itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: '#fbbf24' }, { offset: 1, color: '#dc2626' }]) }, progress: { show: true, width: 14, roundCap: true }, pointer: { show: false }, axisLine: { lineStyle: { width: 14, color: [[1, isDarkMode ? '#334155' : '#f1f5f9']] }, roundCap: true }, axisTick: { show: false }, splitLine: { show: false }, axisLabel: { show: false }, title: { show: false }, detail: { valueAnimation: true, offsetCenter: [0, '-10%'], fontSize: 26, fontWeight: 800, color: '#dc2626', formatter: '{value}%' }, data: [{ value: parseFloat(riskExposure), name: 'RIESGO' }] }] }
 
   const yAxisImpacts = ['Costo', 'Tiempo', 'Alcance']
   const xAxisSeverities = ['Baja', 'Media', 'Alta']
   const getRiskColor = (x: number, y: number, val: number) => {
-    if (val === 0) return isDarkMode ? '#1e293b' : '#f8fafc' 
+    if (val === 0) return isDarkMode ? 'rgba(30, 41, 59, 0.5)' : 'rgba(241, 245, 249, 0.5)' 
     if (x === 2 && y === 2) return '#dc2626'
     if ((x === 2 && y === 1) || (x === 1 && y === 2)) return '#ea580c'
     if ((x === 0 && y === 2) || (x === 2 && y === 0) || (x === 1 && y === 1)) return '#eab308'
@@ -365,63 +399,42 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
     series: [{
       name: 'Riesgos', type: 'heatmap', data: rawMatrix.map(item => ({ value: item, itemStyle: { color: getRiskColor(item[0], item[1], item[2]) } })),
       label: { show: true, formatter: (p: any) => p.data.value[2] > 0 ? p.data.value[2] : '', fontWeight: 800, fontSize: 18, color: '#ffffff', textShadowColor: 'rgba(0,0,0,0.4)', textShadowBlur: 4 },
-      itemStyle: { borderColor: isDarkMode ? '#0f172a' : '#ffffff', borderWidth: 4, borderRadius: 8 }
+      itemStyle: { borderColor: isDarkMode ? '#0f172a' : '#ffffff', borderWidth: 6, borderRadius: 12 }
     }]
   }
 
-  const chartStatusDonut = {
-    tooltip: { trigger: 'item' },
-    legend: { bottom: '0%', icon: 'circle', itemWidth: 10, textStyle: { color: labelColor, fontSize: 11, fontWeight: 600 } },
-    series: [{
-      type: 'pie', radius: ['50%', '75%'], center: ['50%', '40%'], avoidLabelOverlap: false,
-      itemStyle: { borderRadius: 8, borderColor: isDarkMode ? '#0f172a' : '#fff', borderWidth: 2, cursor: 'pointer' },
-      label: { show: false },
-      color: ['#94a3b8', '#3b82f6', '#f59e0b', '#10b981', '#009036'],
-      data: statusChartData
-    }]
-  }
+  const chartStatusDonut = { tooltip: { trigger: 'item' }, legend: { bottom: '0%', icon: 'circle', itemWidth: 10, textStyle: { color: labelColor, fontSize: 11, fontWeight: 600 } }, series: [{ type: 'pie', radius: ['50%', '75%'], center: ['50%', '40%'], avoidLabelOverlap: false, itemStyle: { borderRadius: 8, borderColor: isDarkMode ? '#0f172a' : 'rgba(255,255,255,0.8)', borderWidth: 3, cursor: 'pointer' }, label: { show: false }, color: ['#94a3b8', '#3b82f6', '#f59e0b', '#10b981', '#009036'], data: statusChartData }] }
+  const chartGeoPie = { tooltip: { trigger: 'item' }, legend: { bottom: '0%', icon: 'circle', itemWidth: 10, textStyle: { color: labelColor, fontSize: 11, fontWeight: 600 } }, series: [{ type: 'pie', radius: '75%', center: ['50%', '40%'], itemStyle: { borderRadius: 6, borderColor: isDarkMode ? '#0f172a' : 'rgba(255,255,255,0.8)', borderWidth: 3, cursor: 'pointer' }, label: { show: false }, color: ['#1c3a91', '#0ea5e9', '#8cc63f', '#facc15', '#6366f1', '#ec4899'], data: geoPieData }] }
+  
+  const chartNightingaleRose = { tooltip: { trigger: 'item', formatter: '{b}: {c}%' }, legend: { show: false }, series: [{ name: 'Salud', type: 'pie', radius: [20, '85%'], center: ['50%', '50%'], roseType: 'area', itemStyle: { borderRadius: 8, borderColor: isDarkMode ? '#0f172a' : 'rgba(255,255,255,0.5)', borderWidth: 2 }, label: { show: true, formatter: '{b}', fontWeight: 700, color: labelColor }, data: [ { value: overallProgressNum, name: 'Avance', itemStyle: { color: '#3b82f6' } }, { value: 100 - riskExposureNum, name: 'Salud', itemStyle: { color: '#10b981' } }, { value: Math.min(100, (approvedCount / (totalDeliverables || 1)) * 120), name: 'Velocidad', itemStyle: { color: '#f59e0b' } }, { value: parseFloat(closureRate), name: 'Cierre', itemStyle: { color: '#8cc63f' } }, { value: 100, name: 'Cobertura', itemStyle: { color: '#1c3a91' } } ] }] }
 
-  const chartGeoPie = {
-    tooltip: { trigger: 'item' },
-    legend: { bottom: '0%', icon: 'circle', itemWidth: 10, textStyle: { color: labelColor, fontSize: 11, fontWeight: 600 } },
-    series: [{
-      type: 'pie', radius: '75%', center: ['50%', '40%'],
-      itemStyle: { borderRadius: 6, borderColor: isDarkMode ? '#0f172a' : '#fff', borderWidth: 2, cursor: 'pointer' },
-      label: { show: false },
-      color: ['#1c3a91', '#0ea5e9', '#8cc63f', '#facc15', '#6366f1', '#ec4899'],
-      data: geoPieData
-    }]
-  }
-
-  const chartNightingaleRose = {
-    tooltip: { trigger: 'item', formatter: '{b}: {c}%' },
-    legend: { show: false },
-    series: [{
-      name: 'Salud', type: 'pie', radius: [20, '85%'], center: ['50%', '50%'], roseType: 'area', itemStyle: { borderRadius: 8 },
-      label: { show: true, formatter: '{b}', fontWeight: 700, color: labelColor },
-      data: [
-        { value: overallProgressNum, name: 'Avance', itemStyle: { color: '#3b82f6' } },
-        { value: 100 - riskExposureNum, name: 'Salud', itemStyle: { color: '#10b981' } },
-        { value: Math.min(100, (approvedCount / (totalDeliverables || 1)) * 120), name: 'Velocidad', itemStyle: { color: '#f59e0b' } },
-        { value: parseFloat(closureRate), name: 'Cierre', itemStyle: { color: '#8cc63f' } },
-        { value: 100, name: 'Cobertura', itemStyle: { color: '#1c3a91' } }
-      ]
-    }]
-  }
-
-  // Cross-Filtering Handlers
+  // Handlers
   const onChartClick = {
     click: (e: any) => {
-      // If clicking Status Pie
       if (statusLabels[e.data.name as keyof typeof statusLabels] || Object.values(statusLabels).includes(e.data.name)) {
         setFilterPhase(filterPhase === e.data.name ? 'ALL' : e.data.name)
       }
-      // If clicking Geo Pie
       const c = geoPieData.find(x => x.name === e.data.name)
-      if (c) {
-        setFilterCountry(filterCountry === c.code ? 'ALL' : c.code)
-      }
+      if (c) setFilterCountry(filterCountry === c.code ? 'ALL' : c.code)
     }
+  }
+
+  // Heatmap Drill-down
+  const onHeatmapClick = {
+    click: (e: any) => {
+      const x = e.data.value[0]; const y = e.data.value[1];
+      const filteredAlerts = data.alerts.filter(a => {
+        let ax = 1; let ay = 1;
+        const sev = a.severity?.toLowerCase() || ''; if (sev.includes('baj') || sev.includes('low')) ax = 0; else if (sev.includes('alt') || sev.includes('high')) ax = 2;
+        const imp = a.impact?.toLowerCase() || ''; if (imp.includes('cost')) ay = 0; else if (imp.includes('alcan') || imp.includes('scop')) ay = 2;
+        return ax === x && ay === y;
+      })
+      setAlertModal({ isOpen: true, title: `Exploración de Riesgo: ${xAxisSeverities[x]} Severidad / ${yAxisImpacts[y]} Impacto`, data: filteredAlerts })
+    }
+  }
+
+  const handlePhaseStepClick = (phaseLabel: string) => {
+    setFilterPhase(filterPhase === phaseLabel ? 'ALL' : phaseLabel)
   }
 
   return (
@@ -429,12 +442,12 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
       <style dangerouslySetInnerHTML={{ __html: pmoStyles }} />
       <div className={`pmo-dashboard ${isDarkMode ? 'dark' : ''}`}>
         
-        {/* VIP Header */}
-        <header className="pmo-header">
+        {/* VIP Glass Header */}
+        <header className="pmo-header glass-panel">
           <div className="pmo-header-top">
             <div className="pmo-title">
               <h1>{data.project.name}</h1>
-              <p>Dashboard Ejecutivo · Control Tower V8.0 Interactive</p>
+              <p>Dashboard Ejecutivo · Control Tower V9.0 Masterpiece</p>
             </div>
             
             <div className="filter-group">
@@ -463,8 +476,8 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
             <div className="meta-badge"><IconUser /><span className="meta-label">PM:</span><span className="meta-value">{data.project.pm || 'N/A'}</span></div>
             <div className="meta-badge"><IconUser /><span className="meta-label">Líder:</span><span className="meta-value">{data.project.user_lead || data.project.project_lead || 'N/A'}</span></div>
             {(filterCountry !== 'ALL' || filterPhase !== 'ALL') && (
-              <div className="meta-badge" style={{ background: '#dbeafe', borderColor: '#bfdbfe' }}>
-                <span className="meta-label" style={{ color: '#1d4ed8' }}>Filtro Activo:</span>
+              <div className="meta-badge" style={{ background: 'rgba(59, 130, 246, 0.1)', borderColor: 'rgba(59, 130, 246, 0.3)' }}>
+                <span className="meta-label" style={{ color: '#2563eb' }}>Filtro Activo:</span>
                 <span className="meta-value" style={{ color: '#1e3a8a' }}>{filterCountry !== 'ALL' ? filterCountry : ''} {filterPhase !== 'ALL' ? filterPhase : ''}</span>
               </div>
             )}
@@ -474,129 +487,146 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
         <main className="pmo-container">
           
           {/* AI Insights Panel */}
-          <div className="pmo-insights">
+          <div className="pmo-insights glass-panel">
             <div className="insights-icon"><IconSparkles /></div>
             <div className="insights-text">
               {insightsText}
             </div>
           </div>
 
-          {/* Stepper Visual Timeline */}
-          <div className="pmo-stepper">
+          {/* Interactive Stepper Visual Timeline */}
+          <div className="pmo-stepper glass-panel">
             <div className="stepper-line" />
             {phaseOrder.map((phaseKey, idx) => {
               const isActive = idx === currentPhaseIndex;
               const isCompleted = idx < currentPhaseIndex;
+              const label = statusLabels[phaseKey as keyof typeof statusLabels]
+              const isFiltered = filterPhase === label
+              
               return (
-                <div key={phaseKey} className={`step-item ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}>
-                  <div className="step-circle">
+                <div key={phaseKey} onClick={() => handlePhaseStepClick(label)} className={`step-item ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`} style={{ transform: isFiltered ? 'scale(1.1)' : '' }}>
+                  <div className="step-circle" style={{ borderColor: isFiltered ? 'var(--accent-color)' : '' }}>
                     {(isCompleted || isActive) && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'white' }} />}
                   </div>
-                  <div className="step-label">{statusLabels[phaseKey as keyof typeof statusLabels]}</div>
+                  <div className="step-label" style={{ color: isFiltered ? 'var(--accent-color)' : '' }}>{label}</div>
                 </div>
               )
             })}
           </div>
 
-          {/* VIP COMPACT KPI GRID WITH SPARKLINES */}
-          <div className="pmo-grid-kpi">
-            <div className="pmo-card clickable" onClick={() => { setModal({ isOpen: true, title: 'Inventario de Avance', data: fD }); setSearchTerm(''); }}>
+          {/* VIP COMPACT KPI GRID WITH TOOLTIPS & ANIMATIONS */}
+          <div className="pmo-grid-kpi animate-stagger">
+            <div className="pmo-card glass-panel clickable" onClick={() => { setModal({ isOpen: true, title: 'Inventario de Avance', data: fD }); setSearchTerm(''); }}>
               <div className="sparkline-container"><ReactECharts option={getSparklineOption([10,20,30,40,70,overallProgressNum], '#3b82f6')} style={{ height: '100%', width: '100%' }} /></div>
               <div className="pmo-card-content">
-                <div className="kpi-header"><div className="kpi-title">Avance Real</div><div className="kpi-icon"><IconTarget /></div></div>
+                <div className="kpi-header">
+                  <div className="kpi-title tooltip-trigger" data-tooltip="Fórmula: Promedio del progreso físico de entregables del scope actual">Avance Real</div>
+                  <div className="kpi-icon"><IconTarget /></div>
+                </div>
                 <div className="kpi-value">{overallProgress}%</div>
               </div>
             </div>
 
-            <div className="pmo-card clickable" onClick={() => { setModal({ isOpen: true, title: 'Entregables Aprobados', data: approvedDeliverables }); setSearchTerm(''); }}>
+            <div className="pmo-card glass-panel clickable" onClick={() => { setModal({ isOpen: true, title: 'Entregables Aprobados', data: approvedDeliverables }); setSearchTerm(''); }}>
               <div className="sparkline-container"><ReactECharts option={getSparklineOption([5,10,15,30,50,parseFloat(closureRate)], '#10b981')} style={{ height: '100%', width: '100%' }} /></div>
               <div className="pmo-card-content">
-                <div className="kpi-header"><div className="kpi-title">Tasa Cierre</div><div className="kpi-icon"><IconCheck /></div></div>
+                <div className="kpi-header">
+                  <div className="kpi-title tooltip-trigger" data-tooltip="Fórmula: Entregables al 100% / Total Entregables">Tasa Cierre</div>
+                  <div className="kpi-icon"><IconCheck /></div>
+                </div>
                 <div className="kpi-value success">{closureRate}%</div>
               </div>
             </div>
 
-            <div className="pmo-card clickable" onClick={() => { setModal({ isOpen: true, title: 'Frentes Críticos (<25%)', data: criticalDeliverables }); setSearchTerm(''); }}>
+            <div className="pmo-card glass-panel clickable" onClick={() => { setModal({ isOpen: true, title: 'Frentes Críticos (<25%)', data: criticalDeliverables }); setSearchTerm(''); }}>
               <div className="sparkline-container"><ReactECharts option={getSparklineOption([10,12,8,9,5,criticalRiskCount], '#dc2626')} style={{ height: '100%', width: '100%' }} /></div>
               <div className="pmo-card-content">
-                <div className="kpi-header"><div className="kpi-title">Frentes Críticos</div><div className="kpi-icon"><IconAlert /></div></div>
+                <div className="kpi-header">
+                  <div className="kpi-title tooltip-trigger" data-tooltip="Entregables que presentan menos del 25% de avance acumulado">Frentes Críticos</div>
+                  <div className="kpi-icon"><IconAlert /></div>
+                </div>
                 <div className="kpi-value danger">{criticalRiskCount}</div>
               </div>
             </div>
 
-            <div className="pmo-card">
+            <div className="pmo-card glass-panel">
               <div className="sparkline-container"><ReactECharts option={getSparklineOption([20,18,15,14,14,totalAlerts], '#eab308')} style={{ height: '100%', width: '100%' }} /></div>
               <div className="pmo-card-content">
-                <div className="kpi-header"><div className="kpi-title">Riesgos Activos</div><div className="kpi-icon"><IconShield /></div></div>
+                <div className="kpi-header">
+                  <div className="kpi-title tooltip-trigger" data-tooltip="Cantidad total de riesgos levantados en el registro RAID">Riesgos Activos</div>
+                  <div className="kpi-icon"><IconShield /></div>
+                </div>
                 <div className="kpi-value warning">{totalAlerts}</div>
               </div>
             </div>
 
-            <div className="pmo-card">
+            <div className="pmo-card glass-panel">
               <div className="sparkline-container"><ReactECharts option={getSparklineOption([5,7,8,10,12,totalSteps], '#94a3b8')} style={{ height: '100%', width: '100%' }} /></div>
               <div className="pmo-card-content">
-                <div className="kpi-header"><div className="kpi-title">Plan Acción</div><div className="kpi-icon"><IconList /></div></div>
+                <div className="kpi-header">
+                  <div className="kpi-title tooltip-trigger" data-tooltip="Iniciativas comprometidas en comités ejecutivos (SteerCo)">Plan Acción</div>
+                  <div className="kpi-icon"><IconList /></div>
+                </div>
                 <div className="kpi-value">{totalSteps}</div>
               </div>
             </div>
 
-            <div className="pmo-card">
+            <div className="pmo-card glass-panel">
               <div className="sparkline-container"><ReactECharts option={getSparklineOption([totalSocieties,totalSocieties,totalSocieties,totalSocieties,totalSocieties,totalSocieties], '#8b5cf6')} style={{ height: '100%', width: '100%' }} /></div>
               <div className="pmo-card-content">
-                <div className="kpi-header"><div className="kpi-title">Sociedades</div><div className="kpi-icon"><IconGlobe /></div></div>
+                <div className="kpi-header">
+                  <div className="kpi-title tooltip-trigger" data-tooltip="Número de sociedades impactadas por el Roll-out actual">Sociedades</div>
+                  <div className="kpi-icon"><IconGlobe /></div>
+                </div>
                 <div className="kpi-value">{totalSocieties}</div>
               </div>
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1.25rem' }}>
+          <div className="animate-stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1.25rem' }}>
             
-            {/* GAUGES */}
-            <div className="pmo-card" style={{ gridColumn: 'span 3', display: 'flex', alignItems: 'center', paddingTop: '1.5rem' }}>
+            <div className="pmo-card glass-panel" style={{ gridColumn: 'span 3', display: 'flex', alignItems: 'center', paddingTop: '1.5rem' }}>
               <div style={{ width: '100%' }}>
                 <div style={{ fontSize: '0.85rem', fontWeight: 800, textAlign: 'center', color: isDarkMode ? '#f8fafc' : '#1e293b', marginBottom: '-10px' }}>Termómetro Avance</div>
                 <ReactECharts option={chartGaugeProgress} style={{ height: '140px' }} />
               </div>
             </div>
 
-            <div className="pmo-card" style={{ gridColumn: 'span 3', display: 'flex', alignItems: 'center', paddingTop: '1.5rem' }}>
+            <div className="pmo-card glass-panel" style={{ gridColumn: 'span 3', display: 'flex', alignItems: 'center', paddingTop: '1.5rem' }}>
               <div style={{ width: '100%' }}>
                 <div style={{ fontSize: '0.85rem', fontWeight: 800, textAlign: 'center', color: isDarkMode ? '#f8fafc' : '#1e293b', marginBottom: '-10px' }}>Exposición Riesgo</div>
                 <ReactECharts option={chartGaugeRisk} style={{ height: '140px' }} />
               </div>
             </div>
 
-            {/* PIE CHARTS (INTERACTIVE CROSS-FILTERING) */}
-            <div className="pmo-card" style={{ gridColumn: 'span 3' }}>
-              <h2 className="pmo-section-title" style={{ fontSize: '0.85rem', marginBottom: '0.5rem' }}>Distribución Fases</h2>
+            <div className="pmo-card glass-panel" style={{ gridColumn: 'span 3' }}>
+              <h2 className="pmo-section-title tooltip-trigger" data-tooltip="Filtro Interactivo: Haz clic en una porción para filtrar" style={{ fontSize: '0.85rem', marginBottom: '0.5rem' }}>Distribución Fases</h2>
               <ReactECharts onEvents={onChartClick} option={chartStatusDonut} style={{ height: '180px' }} />
-              <div style={{ textAlign: 'center', fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '-10px' }}>↑ Haz clic para filtrar todo el panel</div>
             </div>
 
-            <div className="pmo-card" style={{ gridColumn: 'span 3' }}>
-              <h2 className="pmo-section-title" style={{ fontSize: '0.85rem', marginBottom: '0.5rem' }}>Peso Geográfico</h2>
+            <div className="pmo-card glass-panel" style={{ gridColumn: 'span 3' }}>
+              <h2 className="pmo-section-title tooltip-trigger" data-tooltip="Filtro Interactivo: Haz clic en un país para aislar los datos" style={{ fontSize: '0.85rem', marginBottom: '0.5rem' }}>Peso Geográfico</h2>
               <ReactECharts onEvents={onChartClick} option={chartGeoPie} style={{ height: '180px' }} />
-              <div style={{ textAlign: 'center', fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '-10px' }}>↑ Haz clic para filtrar todo el panel</div>
             </div>
 
-            {/* ADVANCED PMO VISUALS */}
-            <div className="pmo-card" style={{ gridColumn: 'span 6' }}>
-              <h2 className="pmo-section-title">Matriz de Riesgo PMBOK</h2>
-              <ReactECharts option={chartRiskHeatmap} style={{ height: '280px' }} />
+            <div className="pmo-card glass-panel" style={{ gridColumn: 'span 6' }}>
+              <h2 className="pmo-section-title tooltip-trigger" data-tooltip="Haz clic en cualquier cuadrante para auditar los riesgos específicos">Matriz de Riesgo PMBOK (Drill-Down)</h2>
+              <ReactECharts onEvents={onHeatmapClick} option={chartRiskHeatmap} style={{ height: '280px' }} />
             </div>
 
-            <div className="pmo-card" style={{ gridColumn: 'span 6' }}>
-              <h2 className="pmo-section-title">Rose Chart: Salud de Proyecto</h2>
+            <div className="pmo-card glass-panel" style={{ gridColumn: 'span 6' }}>
+              <h2 className="pmo-section-title tooltip-trigger" data-tooltip="Diagrama Polar: Equilibrio de métricas de salud estructural">Rose Chart: Salud de Proyecto</h2>
               <ReactECharts option={chartNightingaleRose} style={{ height: '280px' }} />
             </div>
 
-            {/* SMART ACTION PLAN TABLE */}
-            <div className="pmo-card" style={{ gridColumn: 'span 12' }}>
+            {/* SMART SORTED ACTION PLAN TABLE */}
+            <div className="pmo-card glass-panel" style={{ gridColumn: 'span 12' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                 <h2 className="pmo-section-title" style={{ margin: 0 }}>Plan de Acción Inmediato (Steering Committee)</h2>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>Ordenado por Vencimiento ↑</span>
               </div>
               
-              <div style={{ overflowX: 'auto', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+              <div style={{ overflowX: 'auto', border: '1px solid var(--glass-border)', borderRadius: '12px' }}>
                 <table className="data-table" style={{ margin: 0 }}>
                   <thead>
                     <tr>
@@ -607,10 +637,10 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
                     </tr>
                   </thead>
                   <tbody>
-                    {data.steps.length === 0 ? (
+                    {sortedSteps.length === 0 ? (
                       <tr><td colSpan={4} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>No hay acciones registradas.</td></tr>
                     ) : (
-                      data.steps.map((s, index) => {
+                      sortedSteps.map((s, index) => {
                         const dueInfo = getDueStatus(s.due)
                         let dueBg = 'var(--badge-bg)'
                         let dueColor = 'var(--text-main)'
@@ -626,7 +656,7 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
                             </td>
                             <td style={{ fontWeight: 700, color: '#1c3a91' }}>{s.owner || '—'}</td>
                             <td>
-                              <span style={{ background: dueBg, color: dueColor, border: '1px solid rgba(0,0,0,0.05)', padding: '0.25rem 0.6rem', borderRadius: '6px', fontWeight: 800, fontSize: '0.7rem' }}>
+                              <span style={{ background: dueBg, color: dueColor, border: '1px solid rgba(0,0,0,0.05)', padding: '0.35rem 0.75rem', borderRadius: '8px', fontWeight: 800, fontSize: '0.7rem' }}>
                                 {dueInfo.label}
                               </span>
                             </td>
@@ -642,7 +672,7 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
           </div>
         </main>
         
-        {/* MODAL CON BUSCADOR EN VIVO */}
+        {/* MODAL INVENTARIO */}
         {modal.isOpen && (
           <div className="modal-backdrop" onClick={() => setModal({ ...modal, isOpen: false })}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -651,51 +681,24 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
                 <button className="modal-close" onClick={() => setModal({ ...modal, isOpen: false })}>&times;</button>
               </div>
               <div className="modal-search">
-                <input 
-                  type="text" 
-                  placeholder="🔍 Buscar entregable, país, sociedad o estado..." 
-                  className="search-input"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  autoFocus
-                />
+                <input type="text" placeholder="🔍 Buscar entregable, país, sociedad o estado..." className="search-input" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} autoFocus />
               </div>
               <div className="modal-body">
                 {filteredModalData.length === 0 ? (
-                  <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                    {searchTerm ? 'No se encontraron resultados para tu búsqueda.' : 'Sin datos disponibles.'}
-                  </div>
+                  <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', fontWeight: 600 }}>{searchTerm ? 'No se encontraron resultados para tu búsqueda.' : 'Sin datos disponibles.'}</div>
                 ) : (
                   <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>País</th>
-                        <th>Sociedad</th>
-                        <th>Reporte</th>
-                        <th>Estado</th>
-                        <th>Avance</th>
-                      </tr>
-                    </thead>
+                    <thead><tr><th>País</th><th>Sociedad</th><th>Reporte</th><th>Estado</th><th>Avance</th></tr></thead>
                     <tbody>
                       {filteredModalData.map(item => {
-                        let statusColor = '#94a3b8'
-                        if (item.pct === 100) statusColor = '#10b981'
-                        else if (item.pct < 25) statusColor = '#dc2626'
-                        else if (item.pct > 60) statusColor = '#3b82f6'
-                        
+                        let statusColor = '#94a3b8'; if (item.pct === 100) statusColor = '#10b981'; else if (item.pct < 25) statusColor = '#dc2626'; else if (item.pct > 60) statusColor = '#3b82f6';
                         return (
                           <tr key={item.id}>
-                            <td style={{ fontWeight: 800 }}>{item.f}</td>
-                            <td>{item.soc}</td>
-                            <td>{item.code || item.rep}</td>
-                            <td>
-                              <span style={{ fontSize: '0.7rem', fontWeight: 700, background: 'var(--badge-bg)', border: '1px solid var(--border-color)', padding: '0.25rem 0.5rem', borderRadius: '6px' }}>
-                                {statusLabels[item.est as keyof typeof statusLabels] || item.est}
-                              </span>
-                            </td>
+                            <td style={{ fontWeight: 800 }}>{item.f}</td><td>{item.soc}</td><td>{item.code || item.rep}</td>
+                            <td><span style={{ fontSize: '0.7rem', fontWeight: 700, background: 'var(--badge-bg)', border: '1px solid var(--glass-border)', padding: '0.25rem 0.5rem', borderRadius: '6px' }}>{statusLabels[item.est as keyof typeof statusLabels] || item.est}</span></td>
                             <td>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{ width: '60px', height: '6px', background: 'var(--badge-bg)', borderRadius: '3px', overflow: 'hidden' }}>
+                                <div style={{ width: '60px', height: '6px', background: 'var(--badge-bg)', borderRadius: '3px', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
                                   <div style={{ height: '100%', width: `${item.pct}%`, background: statusColor, borderRadius: '3px' }} />
                                 </div>
                                 <span style={{ fontSize: '0.75rem', fontWeight: 800, color: statusColor }}>{item.pct}%</span>
@@ -704,6 +707,39 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
                           </tr>
                         )
                       })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL RIESGOS (HEATMAP DRILL-DOWN) */}
+        {alertModal.isOpen && (
+          <div className="modal-backdrop" onClick={() => setAlertModal({ ...alertModal, isOpen: false })}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px', height: '60vh' }}>
+              <div className="modal-header">
+                <h2>{alertModal.title}</h2>
+                <button className="modal-close" onClick={() => setAlertModal({ ...alertModal, isOpen: false })}>&times;</button>
+              </div>
+              <div className="modal-body">
+                {alertModal.data.length === 0 ? (
+                  <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', fontWeight: 600 }}>No hay alertas registradas en este nivel de riesgo. ¡Buenas noticias!</div>
+                ) : (
+                  <table className="data-table">
+                    <thead><tr><th>Impacto Mapeado</th><th>Nivel Severidad</th></tr></thead>
+                    <tbody>
+                      {alertModal.data.map(alert => (
+                        <tr key={alert.id}>
+                          <td style={{ fontWeight: 800, color: 'var(--text-main)' }}>{alert.impact || 'General'}</td>
+                          <td>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 800, background: 'var(--badge-bg)', padding: '0.35rem 0.75rem', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                              {alert.severity || 'N/A'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 )}
