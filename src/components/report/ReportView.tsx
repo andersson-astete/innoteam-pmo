@@ -23,6 +23,9 @@ const pmoStyles = `
     --border-color: #e2e8f0;
     --hover-shadow: rgba(0, 0, 0, 0.08);
     --badge-bg: #f8fafc;
+    --accent-color: #1c3a91;
+    --stepper-bg: #e2e8f0;
+    --stepper-active: #009036;
     
     font-family: 'Plus Jakarta Sans', sans-serif;
     background-color: var(--bg-main);
@@ -41,6 +44,9 @@ const pmoStyles = `
     --border-color: #1e293b;
     --hover-shadow: rgba(255, 255, 255, 0.05);
     --badge-bg: #1e293b;
+    --accent-color: #3b82f6;
+    --stepper-bg: #334155;
+    --stepper-active: #10b981;
   }
   
   .pmo-header {
@@ -54,206 +60,107 @@ const pmoStyles = `
     transition: all 0.3s ease;
   }
 
-  .pmo-header-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-
-  .pmo-project-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-top: 1.25rem;
-  }
+  .pmo-header-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
+  .pmo-project-meta { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem; }
 
   .meta-badge {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: var(--badge-bg);
-    border: 1px solid var(--border-color);
-    padding: 0.35rem 0.85rem;
-    border-radius: 99px;
+    display: flex; align-items: center; gap: 0.5rem;
+    background: var(--badge-bg); border: 1px solid var(--border-color);
+    padding: 0.35rem 0.85rem; border-radius: 99px;
   }
-  
   .meta-badge svg { color: var(--text-muted); width: 14px; height: 14px; }
   .meta-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 700; }
   .meta-value { font-size: 0.75rem; font-weight: 700; color: var(--text-main); margin-left: 0.25rem; }
   
-  .pmo-title h1 {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: var(--text-main);
-    margin: 0;
-    letter-spacing: -0.025em;
-  }
+  .pmo-title h1 { font-size: 1.5rem; font-weight: 800; color: var(--text-main); margin: 0; letter-spacing: -0.025em; }
+  .pmo-title p { margin: 0.15rem 0 0 0; font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
   
-  .pmo-title p {
-    margin: 0.15rem 0 0 0;
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    font-weight: 600;
-  }
-  
-  .pmo-container {
-    max-width: 1440px;
-    margin: 0 auto;
-    padding: 1.5rem;
-  }
+  .pmo-container { max-width: 1440px; margin: 0 auto; padding: 1.5rem; }
 
-  .pmo-grid-kpi {
-    display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 1.25rem;
+  /* Insights Panel */
+  .pmo-insights {
+    background: linear-gradient(to right, rgba(28, 58, 145, 0.05), rgba(0, 144, 54, 0.05));
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
     margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
   }
-  
+  .pmo-dashboard.dark .pmo-insights { background: linear-gradient(to right, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1)); }
+  .insights-icon { background: var(--bg-card); padding: 0.5rem; border-radius: 50%; color: var(--accent-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+  .insights-text { font-size: 0.85rem; font-weight: 600; color: var(--text-main); line-height: 1.5; }
+  .insights-text strong { color: var(--accent-color); font-weight: 800; }
+
+  /* Stepper */
+  .pmo-stepper {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;
+    background: var(--bg-card); padding: 1rem 1.5rem; border-radius: 12px; border: 1px solid var(--border-color);
+    position: relative;
+  }
+  .stepper-line { position: absolute; top: 50%; left: 1.5rem; right: 1.5rem; height: 2px; background: var(--stepper-bg); transform: translateY(-50%); z-index: 0; }
+  .step-item { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; background: var(--bg-card); padding: 0 0.5rem; }
+  .step-circle { width: 20px; height: 20px; border-radius: 50%; background: var(--stepper-bg); border: 3px solid var(--bg-card); display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+  .step-item.active .step-circle { background: var(--stepper-active); box-shadow: 0 0 0 4px rgba(0, 144, 54, 0.2); }
+  .pmo-dashboard.dark .step-item.active .step-circle { box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2); }
+  .step-item.completed .step-circle { background: var(--stepper-active); }
+  .step-label { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .step-item.active .step-label { color: var(--text-main); }
+
+  .pmo-grid-kpi { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem; }
   @media (max-width: 1280px) { .pmo-grid-kpi { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   @media (max-width: 768px) { .pmo-grid-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 480px) { .pmo-grid-kpi { grid-template-columns: repeat(1, minmax(0, 1fr)); } }
 
   .pmo-card {
-    background: var(--bg-card);
-    border-radius: 16px;
-    padding: 1.25rem;
-    border: 1px solid var(--border-color);
-    transition: all 0.2s ease;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    position: relative;
-    overflow: hidden;
+    background: var(--bg-card); border-radius: 16px; padding: 1.25rem; border: 1px solid var(--border-color);
+    transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden;
   }
-  
   .pmo-card.clickable { cursor: pointer; }
-  .pmo-card.clickable:hover {
-    box-shadow: 0 10px 20px -3px var(--hover-shadow);
-    transform: translateY(-2px);
-    border-color: #cbd5e1;
-  }
+  .pmo-card.clickable:hover { box-shadow: 0 10px 20px -3px var(--hover-shadow); transform: translateY(-2px); border-color: #cbd5e1; }
 
-  .kpi-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-  }
-
-  .kpi-title {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 800;
-    color: var(--text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  
-  .kpi-icon {
-    color: var(--border-color);
-    width: 20px;
-    height: 20px;
-  }
-
-  .kpi-value {
-    font-size: 2.25rem;
-    font-weight: 800;
-    color: var(--text-main);
-    line-height: 1;
-    letter-spacing: -0.025em;
-  }
+  .kpi-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+  .kpi-title { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 800; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi-icon { color: var(--border-color); width: 20px; height: 20px; }
+  .kpi-value { font-size: 2.25rem; font-weight: 800; color: var(--text-main); line-height: 1; letter-spacing: -0.025em; }
   
   .kpi-value.danger { color: #dc2626; }
   .kpi-value.success { color: #10b981; }
   .kpi-value.warning { color: #eab308; }
 
-  .pmo-section-title {
-    font-size: 1rem;
-    font-weight: 800;
-    color: var(--text-main);
-    margin: 0 0 1rem 0;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
+  .pmo-section-title { font-size: 1rem; font-weight: 800; color: var(--text-main); margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem; }
+  .pmo-section-title::before { content: ''; display: block; width: 4px; height: 14px; background: var(--stepper-active); border-radius: 2px; }
 
-  .pmo-section-title::before {
-    content: '';
-    display: block;
-    width: 4px;
-    height: 14px;
-    background: #009036;
-    border-radius: 2px;
-  }
-
-  .filter-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    background: var(--badge-bg);
-    padding: 0.35rem;
-    border-radius: 10px;
-    border: 1px solid var(--border-color);
-  }
-
-  .filter-btn {
-    padding: 0.35rem 1rem;
-    border-radius: 8px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    cursor: pointer;
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    transition: all 0.2s ease;
-  }
-
+  .filter-group { display: flex; flex-wrap: wrap; gap: 0.35rem; background: var(--badge-bg); padding: 0.35rem; border-radius: 10px; border: 1px solid var(--border-color); }
+  .filter-btn { padding: 0.35rem 1rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; border: none; background: transparent; color: var(--text-muted); transition: all 0.2s ease; }
   .filter-btn:hover { color: var(--text-main); }
   .filter-btn.active { background: var(--bg-card); color: var(--text-main); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
   
   .btn-action {
-    display: flex; align-items: center; gap: 0.4rem;
-    background: #1c3a91; color: white; border: none;
-    padding: 0.5rem 1rem; border-radius: 8px;
-    font-size: 0.8rem; font-weight: 700; cursor: pointer;
-    transition: all 0.2s ease;
+    display: flex; align-items: center; gap: 0.4rem; background: var(--accent-color); color: white; border: none;
+    padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease;
   }
-  .btn-action:hover { background: #1e40af; transform: translateY(-1px); }
+  .btn-action:hover { opacity: 0.9; transform: translateY(-1px); }
   .btn-action.secondary { background: var(--badge-bg); color: var(--text-main); border: 1px solid var(--border-color); }
   .btn-action.secondary:hover { background: var(--border-color); }
 
   /* Modal */
-  .modal-backdrop {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(6px); z-index: 50;
-    display: flex; align-items: center; justify-content: center; padding: 1rem;
-    animation: fadeIn 0.2s ease-out;
-  }
-  .modal-content {
-    background: var(--bg-card); border-radius: 20px; width: 100%; max-width: 900px; max-height: 85vh;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column;
-    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); overflow: hidden;
-    border: 1px solid var(--border-color);
-  }
-  .modal-header {
-    padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color);
-    display: flex; justify-content: space-between; align-items: center; background: var(--bg-header);
-  }
+  .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(6px); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1rem; animation: fadeIn 0.2s ease-out; }
+  .modal-content { background: var(--bg-card); border-radius: 20px; width: 100%; max-width: 900px; height: 85vh; max-height: 800px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 1px solid var(--border-color); }
+  .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--bg-header); }
   .modal-header h2 { margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-main); }
-  .modal-close {
-    background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);
-    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
-    border-radius: 50%; transition: background 0.2s;
-  }
+  
+  .modal-search { padding: 1rem 1.5rem; background: var(--badge-bg); border-bottom: 1px solid var(--border-color); }
+  .search-input { width: 100%; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-family: inherit; font-size: 0.85rem; font-weight: 600; outline: none; transition: border-color 0.2s; }
+  .search-input:focus { border-color: var(--accent-color); }
+  
+  .modal-close { background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.2s; }
   .modal-close:hover { background: var(--border-color); color: var(--text-main); }
   .modal-body { padding: 0; overflow-y: auto; flex: 1; }
   
   .data-table { width: 100%; border-collapse: collapse; text-align: left; }
-  .data-table th { padding: 0.85rem 1.25rem; background: var(--badge-bg); color: var(--text-muted); font-weight: 800; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; }
+  .data-table th { padding: 0.85rem 1.25rem; background: var(--badge-bg); color: var(--text-muted); font-weight: 800; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 2; }
   .data-table td { padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--border-color); font-size: 0.8rem; color: var(--text-main); font-weight: 500; }
   .data-table tr:hover td { background: var(--badge-bg); }
 
@@ -262,7 +169,7 @@ const pmoStyles = `
     body, .pmo-dashboard { background: white !important; color: black !important; }
     .pmo-header { position: relative; box-shadow: none; border-bottom: 2px solid #000; }
     .filter-group, .btn-action { display: none !important; }
-    .pmo-card { break-inside: avoid; border: 1px solid #ccc; box-shadow: none; }
+    .pmo-card, .pmo-insights, .pmo-stepper { break-inside: avoid; border: 1px solid #ccc; box-shadow: none; }
     .pmo-container { padding: 0; max-width: 100%; }
     .data-table th { background: #eee !important; color: #000 !important; }
   }
@@ -283,6 +190,7 @@ const IconGlobe = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColo
 const IconMoon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
 const IconSun = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
 const IconPrinter = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+const IconSparkles = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M3 5h4"/></svg>
 
 export default function ReportView({ projectId }: { projectId: string; canEdit?: boolean }) {
   const [data, setData] = useState<ProjectData | null>(null)
@@ -290,6 +198,7 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
   const [filterCountry, setFilterCountry] = useState('ALL')
   const [modal, setModal] = useState<ModalState>({ isOpen: false, title: '', data: [] })
   const [isDarkMode, setIsDarkMode] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
     let alive = true
@@ -311,6 +220,14 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
 
   const handlePrint = () => { window.print() }
 
+  // Action Plan smart parser
+  const getDueStatus = (due: string | null) => {
+    if (!due || due.toLowerCase().includes('definir')) return { status: 'missing', label: 'Sin Fecha' }
+    const d = new Date(due)
+    if (!isNaN(d.getTime()) && d < new Date()) return { status: 'overdue', label: due }
+    return { status: 'ontime', label: due }
+  }
+
   // --- COMPACT NUMERIC METRICS ---
   const totalDeliverables = fD.length
   const overallProgressNum = totalDeliverables ? avgOf(fD) : 0
@@ -326,15 +243,43 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
   const totalSocieties = data.societies.length
   const totalAlerts = data.alerts.length
   const totalSteps = data.steps.length
+  const overdueSteps = data.steps.filter(s => getDueStatus(s.due).status === 'overdue').length
   const riskExposureNum = Math.min(100, (criticalRiskCount / (totalDeliverables || 1)) * 100)
   const riskExposure = riskExposureNum.toFixed(1)
 
+  // AI Insights Generation
+  const insightsText = (
+    <>
+      El proyecto presenta un avance consolidado del <strong>{overallProgress}%</strong> y una tasa de cierre del <strong>{closureRate}%</strong>. 
+      {criticalRiskCount > 0 
+        ? ` Se detectan ${criticalRiskCount} frentes en riesgo crítico (<25% avance) que elevan la exposición al ${riskExposure}%. ` 
+        : ' Los entregables avanzan con niveles aceptables de riesgo. '}
+      {overdueSteps > 0 
+        ? <span style={{ color: '#dc2626' }}>Atención: Existen {overdueSteps} compromisos vencidos en el Plan de Acción.</span> 
+        : ' El Plan de Acción se encuentra al día y sin vencimientos críticos.'}
+    </>
+  )
+
   // Pie & Donut logic
-  const statusLabels = { 'init': 'Inicio', 'proc': 'Proceso', 'testing': 'Pruebas', 'client': 'Aprob. Cliente', 'go': 'Go-Live' }
+  const statusLabels = { 'init': 'Inicio', 'proc': 'En Proceso', 'testing': 'Pruebas', 'client': 'Aprob. Cliente', 'go': 'Go-Live' }
+  const phaseOrder = ['init', 'proc', 'testing', 'client', 'go']
+  
   const statusCounts = fD.reduce((acc, curr) => {
     acc[curr.est] = (acc[curr.est] || 0) + 1; return acc
   }, {} as Record<string, number>)
+  
   const statusChartData = Object.entries(statusCounts).map(([k, v]) => ({ name: statusLabels[k as keyof typeof statusLabels] || k, value: v }))
+
+  // Stepper Logic: Find the highest active phase (highest count of items not yet in go-live, or go-live if all done)
+  let currentPhaseIndex = 0;
+  let maxPhaseCount = 0;
+  phaseOrder.forEach((phase, idx) => {
+    if ((statusCounts[phase] || 0) > maxPhaseCount) {
+      maxPhaseCount = statusCounts[phase]
+      currentPhaseIndex = idx
+    }
+  })
+  if (overallProgressNum === 100) currentPhaseIndex = 4; // Force Go-Live if 100%
 
   const countryCodes = filterCountry === 'ALL' ? countries.map(c => c.code) : [filterCountry]
   const geoPieData = countryCodes.map(code => {
@@ -342,6 +287,19 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
     const name = countries.find(x => x.code === code)?.name || code
     return { name, value: count }
   }).filter(x => x.value > 0)
+
+  // Modal Live Search Filtering
+  const filteredModalData = modal.data.filter(item => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      (item.f && item.f.toLowerCase().includes(term)) ||
+      (item.soc && item.soc.toLowerCase().includes(term)) ||
+      (item.code && item.code.toLowerCase().includes(term)) ||
+      (item.rep && item.rep.toLowerCase().includes(term)) ||
+      (item.est && item.est.toLowerCase().includes(term))
+    );
+  })
 
   // CSS variables for ECharts
   const labelColor = isDarkMode ? '#cbd5e1' : '#475569'
@@ -470,26 +428,17 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
     ]
   }
 
-  // Action Plan smart parser
-  const getDueStatus = (due: string | null) => {
-    if (!due || due.toLowerCase().includes('definir')) return { status: 'missing', label: 'Sin Fecha' }
-    // Very simple past date check (assuming format YYYY-MM-DD or MM/DD/YYYY, if random text it won't be caught accurately but gives some logic)
-    const d = new Date(due)
-    if (!isNaN(d.getTime()) && d < new Date()) return { status: 'overdue', label: due }
-    return { status: 'ontime', label: due }
-  }
-
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: pmoStyles }} />
       <div className={`pmo-dashboard ${isDarkMode ? 'dark' : ''}`}>
         
-        {/* VIP Header with Badges & Print/Dark actions */}
+        {/* VIP Header */}
         <header className="pmo-header">
           <div className="pmo-header-top">
             <div className="pmo-title">
               <h1>{data.project.name}</h1>
-              <p>Dashboard Ejecutivo · Control Tower V6.0 Enterprise</p>
+              <p>Dashboard Ejecutivo · Control Tower V7.0 AI</p>
             </div>
             
             <div className="filter-group">
@@ -529,19 +478,39 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
               <span className="meta-label">Líder:</span>
               <span className="meta-value">{data.project.user_lead || data.project.project_lead || 'N/A'}</span>
             </div>
-            <div className="meta-badge">
-              <IconTarget />
-              <span className="meta-label">Fase Actual:</span>
-              <span className="meta-value" style={{ textTransform: 'capitalize' }}>{data.project.stage || 'N/A'}</span>
-            </div>
           </div>
         </header>
 
         <main className="pmo-container">
           
+          {/* AI Insights Panel */}
+          <div className="pmo-insights">
+            <div className="insights-icon"><IconSparkles /></div>
+            <div className="insights-text">
+              {insightsText}
+            </div>
+          </div>
+
+          {/* Stepper Visual Timeline */}
+          <div className="pmo-stepper">
+            <div className="stepper-line" />
+            {phaseOrder.map((phaseKey, idx) => {
+              const isActive = idx === currentPhaseIndex;
+              const isCompleted = idx < currentPhaseIndex;
+              return (
+                <div key={phaseKey} className={`step-item ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}>
+                  <div className="step-circle">
+                    {(isCompleted || isActive) && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'white' }} />}
+                  </div>
+                  <div className="step-label">{statusLabels[phaseKey as keyof typeof statusLabels]}</div>
+                </div>
+              )
+            })}
+          </div>
+
           {/* VIP COMPACT KPI GRID */}
           <div className="pmo-grid-kpi">
-            <div className="pmo-card clickable" onClick={() => setModal({ isOpen: true, title: 'Inventario de Avance', data: fD })}>
+            <div className="pmo-card clickable" onClick={() => { setModal({ isOpen: true, title: 'Inventario de Avance', data: fD }); setSearchTerm(''); }}>
               <div className="kpi-header">
                 <div className="kpi-title">Avance Real</div>
                 <div className="kpi-icon"><IconTarget /></div>
@@ -549,7 +518,7 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
               <div className="kpi-value">{overallProgress}%</div>
             </div>
 
-            <div className="pmo-card clickable" onClick={() => setModal({ isOpen: true, title: 'Entregables Aprobados', data: approvedDeliverables })}>
+            <div className="pmo-card clickable" onClick={() => { setModal({ isOpen: true, title: 'Entregables Aprobados', data: approvedDeliverables }); setSearchTerm(''); }}>
               <div className="kpi-header">
                 <div className="kpi-title">Tasa Cierre</div>
                 <div className="kpi-icon"><IconCheck /></div>
@@ -557,7 +526,7 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
               <div className="kpi-value success">{closureRate}%</div>
             </div>
 
-            <div className="pmo-card clickable" onClick={() => setModal({ isOpen: true, title: 'Frentes en Riesgo Crítico (<25%)', data: criticalDeliverables })}>
+            <div className="pmo-card clickable" onClick={() => { setModal({ isOpen: true, title: 'Frentes Críticos (<25%)', data: criticalDeliverables }); setSearchTerm(''); }}>
               <div className="kpi-header">
                 <div className="kpi-title">Frentes Críticos</div>
                 <div className="kpi-icon"><IconAlert /></div>
@@ -681,7 +650,7 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
           </div>
         </main>
         
-        {/* MODAL */}
+        {/* MODAL CON BUSCADOR EN VIVO */}
         {modal.isOpen && (
           <div className="modal-backdrop" onClick={() => setModal({ ...modal, isOpen: false })}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -689,9 +658,21 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
                 <h2>{modal.title}</h2>
                 <button className="modal-close" onClick={() => setModal({ ...modal, isOpen: false })}>&times;</button>
               </div>
+              <div className="modal-search">
+                <input 
+                  type="text" 
+                  placeholder="🔍 Buscar entregable, país, sociedad o estado..." 
+                  className="search-input"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  autoFocus
+                />
+              </div>
               <div className="modal-body">
-                {modal.data.length === 0 ? (
-                  <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>Sin datos disponibles.</div>
+                {filteredModalData.length === 0 ? (
+                  <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    {searchTerm ? 'No se encontraron resultados para tu búsqueda.' : 'Sin datos disponibles.'}
+                  </div>
                 ) : (
                   <table className="data-table">
                     <thead>
@@ -704,7 +685,7 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
                       </tr>
                     </thead>
                     <tbody>
-                      {modal.data.map(item => {
+                      {filteredModalData.map(item => {
                         let statusColor = '#94a3b8'
                         if (item.pct === 100) statusColor = '#10b981'
                         else if (item.pct < 25) statusColor = '#dc2626'
@@ -717,7 +698,7 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
                             <td>{item.code || item.rep}</td>
                             <td>
                               <span style={{ fontSize: '0.7rem', fontWeight: 700, background: 'var(--badge-bg)', border: '1px solid var(--border-color)', padding: '0.25rem 0.5rem', borderRadius: '6px' }}>
-                                {item.est}
+                                {statusLabels[item.est as keyof typeof statusLabels] || item.est}
                               </span>
                             </td>
                             <td>
