@@ -49,25 +49,11 @@ const pmoStyles = `
     --stepper-active: #10b981;
   }
   
-  .pmo-header {
-    background: var(--bg-header);
-    padding: 1.5rem 2rem;
-    box-shadow: 0 1px 3px 0 rgba(0,0,0,0.05);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    border-bottom: 1px solid var(--border-color);
-    transition: all 0.3s ease;
-  }
-
+  .pmo-header { background: var(--bg-header); padding: 1.5rem 2rem; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--border-color); transition: all 0.3s ease; }
   .pmo-header-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
   .pmo-project-meta { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem; }
 
-  .meta-badge {
-    display: flex; align-items: center; gap: 0.5rem;
-    background: var(--badge-bg); border: 1px solid var(--border-color);
-    padding: 0.35rem 0.85rem; border-radius: 99px;
-  }
+  .meta-badge { display: flex; align-items: center; gap: 0.5rem; background: var(--badge-bg); border: 1px solid var(--border-color); padding: 0.35rem 0.85rem; border-radius: 99px; }
   .meta-badge svg { color: var(--text-muted); width: 14px; height: 14px; }
   .meta-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 700; }
   .meta-value { font-size: 0.75rem; font-weight: 700; color: var(--text-main); margin-left: 0.25rem; }
@@ -78,27 +64,14 @@ const pmoStyles = `
   .pmo-container { max-width: 1440px; margin: 0 auto; padding: 1.5rem; }
 
   /* Insights Panel */
-  .pmo-insights {
-    background: linear-gradient(to right, rgba(28, 58, 145, 0.05), rgba(0, 144, 54, 0.05));
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 1rem 1.5rem;
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
+  .pmo-insights { background: linear-gradient(to right, rgba(28, 58, 145, 0.05), rgba(0, 144, 54, 0.05)); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; }
   .pmo-dashboard.dark .pmo-insights { background: linear-gradient(to right, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1)); }
   .insights-icon { background: var(--bg-card); padding: 0.5rem; border-radius: 50%; color: var(--accent-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
   .insights-text { font-size: 0.85rem; font-weight: 600; color: var(--text-main); line-height: 1.5; }
   .insights-text strong { color: var(--accent-color); font-weight: 800; }
 
   /* Stepper */
-  .pmo-stepper {
-    display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;
-    background: var(--bg-card); padding: 1rem 1.5rem; border-radius: 12px; border: 1px solid var(--border-color);
-    position: relative;
-  }
+  .pmo-stepper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; background: var(--bg-card); padding: 1rem 1.5rem; border-radius: 12px; border: 1px solid var(--border-color); position: relative; }
   .stepper-line { position: absolute; top: 50%; left: 1.5rem; right: 1.5rem; height: 2px; background: var(--stepper-bg); transform: translateY(-50%); z-index: 0; }
   .step-item { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; background: var(--bg-card); padding: 0 0.5rem; }
   .step-circle { width: 20px; height: 20px; border-radius: 50%; background: var(--stepper-bg); border: 3px solid var(--bg-card); display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
@@ -119,6 +92,9 @@ const pmoStyles = `
   }
   .pmo-card.clickable { cursor: pointer; }
   .pmo-card.clickable:hover { box-shadow: 0 10px 20px -3px var(--hover-shadow); transform: translateY(-2px); border-color: #cbd5e1; }
+  
+  .sparkline-container { position: absolute; bottom: 0; left: 0; right: 0; height: 50%; opacity: 0.2; pointer-events: none; z-index: 0; }
+  .pmo-card-content { position: relative; z-index: 1; }
 
   .kpi-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
   .kpi-title { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 800; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -137,24 +113,21 @@ const pmoStyles = `
   .filter-btn:hover { color: var(--text-main); }
   .filter-btn.active { background: var(--bg-card); color: var(--text-main); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
   
-  .btn-action {
-    display: flex; align-items: center; gap: 0.4rem; background: var(--accent-color); color: white; border: none;
-    padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease;
-  }
+  .btn-action { display: flex; align-items: center; gap: 0.4rem; background: var(--accent-color); color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease; }
   .btn-action:hover { opacity: 0.9; transform: translateY(-1px); }
   .btn-action.secondary { background: var(--badge-bg); color: var(--text-main); border: 1px solid var(--border-color); }
   .btn-action.secondary:hover { background: var(--border-color); }
+  .btn-action.success { background: #009036; }
+  .btn-action.success:hover { background: #007a2d; }
 
   /* Modal */
   .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(6px); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1rem; animation: fadeIn 0.2s ease-out; }
   .modal-content { background: var(--bg-card); border-radius: 20px; width: 100%; max-width: 900px; height: 85vh; max-height: 800px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 1px solid var(--border-color); }
   .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--bg-header); }
   .modal-header h2 { margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-main); }
-  
   .modal-search { padding: 1rem 1.5rem; background: var(--badge-bg); border-bottom: 1px solid var(--border-color); }
   .search-input { width: 100%; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); font-family: inherit; font-size: 0.85rem; font-weight: 600; outline: none; transition: border-color 0.2s; }
   .search-input:focus { border-color: var(--accent-color); }
-  
   .modal-close { background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.2s; }
   .modal-close:hover { background: var(--border-color); color: var(--text-main); }
   .modal-body { padding: 0; overflow-y: auto; flex: 1; }
@@ -168,8 +141,8 @@ const pmoStyles = `
   @media print {
     body, .pmo-dashboard { background: white !important; color: black !important; }
     .pmo-header { position: relative; box-shadow: none; border-bottom: 2px solid #000; }
-    .filter-group, .btn-action { display: none !important; }
-    .pmo-card, .pmo-insights, .pmo-stepper { break-inside: avoid; border: 1px solid #ccc; box-shadow: none; }
+    .filter-group, .btn-action, .pmo-insights, .pmo-stepper { display: none !important; }
+    .pmo-card { break-inside: avoid; border: 1px solid #ccc; box-shadow: none; }
     .pmo-container { padding: 0; max-width: 100%; }
     .data-table th { background: #eee !important; color: #000 !important; }
   }
@@ -191,11 +164,23 @@ const IconMoon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor
 const IconSun = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
 const IconPrinter = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
 const IconSparkles = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M3 5h4"/></svg>
+const IconDownload = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+
+const getSparklineOption = (data: number[], color: string) => ({
+  grid: { left: -10, right: -10, top: 0, bottom: -10 },
+  xAxis: { type: 'category', show: false, data: [1,2,3,4,5,6] },
+  yAxis: { type: 'value', show: false },
+  series: [{ type: 'line', data, smooth: true, lineStyle: { width: 2, color }, symbol: 'none', areaStyle: { color, opacity: 0.1 } }]
+})
 
 export default function ReportView({ projectId }: { projectId: string; canEdit?: boolean }) {
   const [data, setData] = useState<ProjectData | null>(null)
   const [loading, setLoading] = useState(true)
+  
+  // Cross-Filters
   const [filterCountry, setFilterCountry] = useState('ALL')
+  const [filterPhase, setFilterPhase] = useState('ALL')
+  
   const [modal, setModal] = useState<ModalState>({ isOpen: false, title: '', data: [] })
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -213,12 +198,36 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
 
   const flat = useMemo<FlatDeliverable[]>(() => (data ? flattenDeliverables(data) : []), [data])
   const countries = data?.countries || []
-  const fD = useMemo(() => flat.filter((d) => filterCountry === 'ALL' || d.f === filterCountry), [flat, filterCountry])
+  const statusLabels = { 'init': 'Inicio', 'proc': 'En Proceso', 'testing': 'Pruebas', 'client': 'Aprob. Cliente', 'go': 'Go-Live' }
+  const phaseOrder = ['init', 'proc', 'testing', 'client', 'go']
+
+  // Independent Data for Cross-Filtering
+  const dataByCountry = useMemo(() => flat.filter(d => filterCountry === 'ALL' || d.f === filterCountry), [flat, filterCountry])
+  const dataByPhase = useMemo(() => flat.filter(d => filterPhase === 'ALL' || statusLabels[d.est as keyof typeof statusLabels] === filterPhase), [flat, filterPhase])
+  
+  // Completely Filtered Data (for KPIs)
+  const fD = useMemo(() => flat.filter(d => {
+    const matchCountry = filterCountry === 'ALL' || d.f === filterCountry
+    const matchPhase = filterPhase === 'ALL' || statusLabels[d.est as keyof typeof statusLabels] === filterPhase
+    return matchCountry && matchPhase
+  }), [flat, filterCountry, filterPhase])
 
   if (loading) return <div style={{ padding: '4rem', textAlign: 'center', color: '#64748b', fontFamily: 'sans-serif' }}>Cargando Control Tower...</div>
   if (!data) return <div style={{ padding: '4rem', textAlign: 'center', color: '#64748b', fontFamily: 'sans-serif' }}>Proyecto no encontrado.</div>
 
   const handlePrint = () => { window.print() }
+
+  const handleDownloadCSV = () => {
+    const headers = ['País', 'Sociedad', 'Reporte', 'Estado', 'Avance']
+    const rows = fD.map(d => [d.f, d.soc, d.code || d.rep, statusLabels[d.est as keyof typeof statusLabels] || d.est, d.pct])
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join("\n")
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement("a")
+    link.setAttribute("href", encodedUri)
+    link.setAttribute("download", `pmo_export_${Date.now()}.csv`)
+    document.body.appendChild(link)
+    link.click()
+  }
 
   // Action Plan smart parser
   const getDueStatus = (due: string | null) => {
@@ -240,8 +249,8 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
   const criticalDeliverables = fD.filter(d => d.pct < 25)
   const criticalRiskCount = criticalDeliverables.length
   
-  const totalSocieties = data.societies.length
-  const totalAlerts = data.alerts.length
+  const totalSocieties = Array.from(new Set(fD.map(d => d.soc))).length
+  const totalAlerts = data.alerts.length // Alerts are project-wide in this simplified model
   const totalSteps = data.steps.length
   const overdueSteps = data.steps.filter(s => getDueStatus(s.due).status === 'overdue').length
   const riskExposureNum = Math.min(100, (criticalRiskCount / (totalDeliverables || 1)) * 100)
@@ -257,20 +266,20 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
       {overdueSteps > 0 
         ? <span style={{ color: '#dc2626' }}>Atención: Existen {overdueSteps} compromisos vencidos en el Plan de Acción.</span> 
         : ' El Plan de Acción se encuentra al día y sin vencimientos críticos.'}
+      {(filterCountry !== 'ALL' || filterPhase !== 'ALL') && (
+        <span style={{ color: '#009036' }}> (Filtro Activo Aplicado).</span>
+      )}
     </>
   )
 
-  // Pie & Donut logic
-  const statusLabels = { 'init': 'Inicio', 'proc': 'En Proceso', 'testing': 'Pruebas', 'client': 'Aprob. Cliente', 'go': 'Go-Live' }
-  const phaseOrder = ['init', 'proc', 'testing', 'client', 'go']
-  
-  const statusCounts = fD.reduce((acc, curr) => {
+  // Pie & Donut logic (Using independent datasets to allow cross-filtering)
+  const statusCounts = dataByCountry.reduce((acc, curr) => {
     acc[curr.est] = (acc[curr.est] || 0) + 1; return acc
   }, {} as Record<string, number>)
   
   const statusChartData = Object.entries(statusCounts).map(([k, v]) => ({ name: statusLabels[k as keyof typeof statusLabels] || k, value: v }))
 
-  // Stepper Logic: Find the highest active phase (highest count of items not yet in go-live, or go-live if all done)
+  // Stepper Logic: Based on dataByCountry to not break when clicking phase
   let currentPhaseIndex = 0;
   let maxPhaseCount = 0;
   phaseOrder.forEach((phase, idx) => {
@@ -279,13 +288,12 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
       currentPhaseIndex = idx
     }
   })
-  if (overallProgressNum === 100) currentPhaseIndex = 4; // Force Go-Live if 100%
+  if (overallProgressNum === 100) currentPhaseIndex = 4;
 
-  const countryCodes = filterCountry === 'ALL' ? countries.map(c => c.code) : [filterCountry]
-  const geoPieData = countryCodes.map(code => {
-    const count = flat.filter(x => x.f === code).length
-    const name = countries.find(x => x.code === code)?.name || code
-    return { name, value: count }
+  const countryCodes = ['ALL', ...countries.map(c => c.code)] // used for quick mapping
+  const geoPieData = countries.map(c => {
+    const count = dataByPhase.filter(x => x.f === c.code).length
+    return { name: c.name, value: count, code: c.code }
   }).filter(x => x.value > 0)
 
   // Modal Live Search Filtering
@@ -297,14 +305,13 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
       (item.soc && item.soc.toLowerCase().includes(term)) ||
       (item.code && item.code.toLowerCase().includes(term)) ||
       (item.rep && item.rep.toLowerCase().includes(term)) ||
-      (item.est && item.est.toLowerCase().includes(term))
+      (item.est && statusLabels[item.est as keyof typeof statusLabels]?.toLowerCase().includes(term))
     );
   })
 
-  // CSS variables for ECharts
   const labelColor = isDarkMode ? '#cbd5e1' : '#475569'
 
-  // 1. Gauges
+  // ECharts Configurations
   const chartGaugeProgress = {
     series: [{
       type: 'gauge', startAngle: 180, endAngle: 0, min: 0, max: 100, splitNumber: 10,
@@ -329,10 +336,8 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
     }]
   }
 
-  // 2. Strict PMBOK Risk Matrix
   const yAxisImpacts = ['Costo', 'Tiempo', 'Alcance']
   const xAxisSeverities = ['Baja', 'Media', 'Alta']
-  
   const getRiskColor = (x: number, y: number, val: number) => {
     if (val === 0) return isDarkMode ? '#1e293b' : '#f8fafc' 
     if (x === 2 && y === 2) return '#dc2626'
@@ -343,29 +348,14 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
     return '#cbd5e1'
   }
 
-  const rawMatrix = [
-    [0,0,0], [1,0,0], [2,0,0],
-    [0,1,0], [1,1,0], [2,1,0],
-    [0,2,0], [1,2,0], [2,2,0]
-  ]
-
+  const rawMatrix = [ [0,0,0], [1,0,0], [2,0,0], [0,1,0], [1,1,0], [2,1,0], [0,2,0], [1,2,0], [2,2,0] ]
   data.alerts.forEach(alert => {
     let xIdx = 1; let yIdx = 1;
-    const sev = alert.severity?.toLowerCase() || ''
-    if (sev.includes('baj') || sev.includes('low')) xIdx = 0
-    else if (sev.includes('alt') || sev.includes('high')) xIdx = 2
-    const imp = alert.impact?.toLowerCase() || ''
-    if (imp.includes('cost')) yIdx = 0
-    else if (imp.includes('alcan') || imp.includes('scop')) yIdx = 2
-
+    const sev = alert.severity?.toLowerCase() || ''; if (sev.includes('baj') || sev.includes('low')) xIdx = 0; else if (sev.includes('alt') || sev.includes('high')) xIdx = 2;
+    const imp = alert.impact?.toLowerCase() || ''; if (imp.includes('cost')) yIdx = 0; else if (imp.includes('alcan') || imp.includes('scop')) yIdx = 2;
     const idx = rawMatrix.findIndex(d => d[0] === xIdx && d[1] === yIdx)
     if (idx !== -1) rawMatrix[idx][2]++
   })
-
-  const matrixDataSeries = rawMatrix.map(item => ({
-    value: item,
-    itemStyle: { color: getRiskColor(item[0], item[1], item[2]) }
-  }))
 
   const chartRiskHeatmap = {
     tooltip: { position: 'top', formatter: (p: any) => `<div style="font-weight:bold;color:#0f172a">${xAxisSeverities[p.data.value[0]]} / ${yAxisImpacts[p.data.value[1]]}</div><div>${p.data.value[2]} Alertas activas</div>` },
@@ -373,19 +363,18 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
     xAxis: { type: 'category', data: xAxisSeverities, axisLine: { show: false }, splitArea: { show: true }, axisLabel: { fontWeight: 700, color: labelColor } },
     yAxis: { type: 'category', data: yAxisImpacts, axisLine: { show: false }, splitArea: { show: true }, axisLabel: { fontWeight: 700, color: labelColor } },
     series: [{
-      name: 'Riesgos', type: 'heatmap', data: matrixDataSeries,
+      name: 'Riesgos', type: 'heatmap', data: rawMatrix.map(item => ({ value: item, itemStyle: { color: getRiskColor(item[0], item[1], item[2]) } })),
       label: { show: true, formatter: (p: any) => p.data.value[2] > 0 ? p.data.value[2] : '', fontWeight: 800, fontSize: 18, color: '#ffffff', textShadowColor: 'rgba(0,0,0,0.4)', textShadowBlur: 4 },
       itemStyle: { borderColor: isDarkMode ? '#0f172a' : '#ffffff', borderWidth: 4, borderRadius: 8 }
     }]
   }
 
-  // 3. Donuts and Pies
   const chartStatusDonut = {
     tooltip: { trigger: 'item' },
     legend: { bottom: '0%', icon: 'circle', itemWidth: 10, textStyle: { color: labelColor, fontSize: 11, fontWeight: 600 } },
     series: [{
       type: 'pie', radius: ['50%', '75%'], center: ['50%', '40%'], avoidLabelOverlap: false,
-      itemStyle: { borderRadius: 8, borderColor: isDarkMode ? '#0f172a' : '#fff', borderWidth: 2 },
+      itemStyle: { borderRadius: 8, borderColor: isDarkMode ? '#0f172a' : '#fff', borderWidth: 2, cursor: 'pointer' },
       label: { show: false },
       color: ['#94a3b8', '#3b82f6', '#f59e0b', '#10b981', '#009036'],
       data: statusChartData
@@ -397,35 +386,42 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
     legend: { bottom: '0%', icon: 'circle', itemWidth: 10, textStyle: { color: labelColor, fontSize: 11, fontWeight: 600 } },
     series: [{
       type: 'pie', radius: '75%', center: ['50%', '40%'],
-      itemStyle: { borderRadius: 6, borderColor: isDarkMode ? '#0f172a' : '#fff', borderWidth: 2 },
+      itemStyle: { borderRadius: 6, borderColor: isDarkMode ? '#0f172a' : '#fff', borderWidth: 2, cursor: 'pointer' },
       label: { show: false },
       color: ['#1c3a91', '#0ea5e9', '#8cc63f', '#facc15', '#6366f1', '#ec4899'],
       data: geoPieData
     }]
   }
 
-  // 4. Nightingale Rose Chart
   const chartNightingaleRose = {
     tooltip: { trigger: 'item', formatter: '{b}: {c}%' },
     legend: { show: false },
-    series: [
-      {
-        name: 'Salud',
-        type: 'pie',
-        radius: [20, '85%'],
-        center: ['50%', '50%'],
-        roseType: 'area',
-        itemStyle: { borderRadius: 8 },
-        label: { show: true, formatter: '{b}', fontWeight: 700, color: labelColor },
-        data: [
-          { value: overallProgressNum, name: 'Avance', itemStyle: { color: '#3b82f6' } },
-          { value: 100 - riskExposureNum, name: 'Salud', itemStyle: { color: '#10b981' } },
-          { value: Math.min(100, (approvedCount / (totalDeliverables || 1)) * 120), name: 'Velocidad', itemStyle: { color: '#f59e0b' } },
-          { value: parseFloat(closureRate), name: 'Cierre', itemStyle: { color: '#8cc63f' } },
-          { value: 100, name: 'Cobertura', itemStyle: { color: '#1c3a91' } }
-        ]
+    series: [{
+      name: 'Salud', type: 'pie', radius: [20, '85%'], center: ['50%', '50%'], roseType: 'area', itemStyle: { borderRadius: 8 },
+      label: { show: true, formatter: '{b}', fontWeight: 700, color: labelColor },
+      data: [
+        { value: overallProgressNum, name: 'Avance', itemStyle: { color: '#3b82f6' } },
+        { value: 100 - riskExposureNum, name: 'Salud', itemStyle: { color: '#10b981' } },
+        { value: Math.min(100, (approvedCount / (totalDeliverables || 1)) * 120), name: 'Velocidad', itemStyle: { color: '#f59e0b' } },
+        { value: parseFloat(closureRate), name: 'Cierre', itemStyle: { color: '#8cc63f' } },
+        { value: 100, name: 'Cobertura', itemStyle: { color: '#1c3a91' } }
+      ]
+    }]
+  }
+
+  // Cross-Filtering Handlers
+  const onChartClick = {
+    click: (e: any) => {
+      // If clicking Status Pie
+      if (statusLabels[e.data.name as keyof typeof statusLabels] || Object.values(statusLabels).includes(e.data.name)) {
+        setFilterPhase(filterPhase === e.data.name ? 'ALL' : e.data.name)
       }
-    ]
+      // If clicking Geo Pie
+      const c = geoPieData.find(x => x.name === e.data.name)
+      if (c) {
+        setFilterCountry(filterCountry === c.code ? 'ALL' : c.code)
+      }
+    }
   }
 
   return (
@@ -438,22 +434,22 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
           <div className="pmo-header-top">
             <div className="pmo-title">
               <h1>{data.project.name}</h1>
-              <p>Dashboard Ejecutivo · Control Tower V7.0 AI</p>
+              <p>Dashboard Ejecutivo · Control Tower V8.0 Interactive</p>
             </div>
             
             <div className="filter-group">
-              <button onClick={() => setFilterCountry('ALL')} className={`filter-btn ${filterCountry === 'ALL' ? 'active' : ''}`}>Global</button>
-              {countries.map(c => (
-                <button key={c.code} onClick={() => setFilterCountry(c.code)} className={`filter-btn ${filterCountry === c.code ? 'active' : ''}`}>
-                  {c.name}
-                </button>
-              ))}
+              <button onClick={() => { setFilterCountry('ALL'); setFilterPhase('ALL'); }} className={`filter-btn ${filterCountry === 'ALL' && filterPhase === 'ALL' ? 'active' : ''}`}>
+                Resetear Filtros
+              </button>
             </div>
             
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <button className="btn-action secondary" onClick={() => setIsDarkMode(!isDarkMode)} title="Toggle Dark Mode">
                 {isDarkMode ? <IconSun /> : <IconMoon />}
-                <span className="hide-on-mobile">{isDarkMode ? 'Tema Claro' : 'Tema Oscuro'}</span>
+              </button>
+              <button className="btn-action success" onClick={handleDownloadCSV} title="Descargar CSV">
+                <IconDownload />
+                <span className="hide-on-mobile">Data Cruda</span>
               </button>
               <button className="btn-action" onClick={handlePrint} title="Exportar Reporte">
                 <IconPrinter />
@@ -463,21 +459,15 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
           </div>
           
           <div className="pmo-project-meta">
-            <div className="meta-badge">
-              <IconUser />
-              <span className="meta-label">Sponsor:</span>
-              <span className="meta-value">{data.project.sponsor || 'N/A'}</span>
-            </div>
-            <div className="meta-badge">
-              <IconUser />
-              <span className="meta-label">PM:</span>
-              <span className="meta-value">{data.project.pm || 'N/A'}</span>
-            </div>
-            <div className="meta-badge">
-              <IconUser />
-              <span className="meta-label">Líder:</span>
-              <span className="meta-value">{data.project.user_lead || data.project.project_lead || 'N/A'}</span>
-            </div>
+            <div className="meta-badge"><IconUser /><span className="meta-label">Sponsor:</span><span className="meta-value">{data.project.sponsor || 'N/A'}</span></div>
+            <div className="meta-badge"><IconUser /><span className="meta-label">PM:</span><span className="meta-value">{data.project.pm || 'N/A'}</span></div>
+            <div className="meta-badge"><IconUser /><span className="meta-label">Líder:</span><span className="meta-value">{data.project.user_lead || data.project.project_lead || 'N/A'}</span></div>
+            {(filterCountry !== 'ALL' || filterPhase !== 'ALL') && (
+              <div className="meta-badge" style={{ background: '#dbeafe', borderColor: '#bfdbfe' }}>
+                <span className="meta-label" style={{ color: '#1d4ed8' }}>Filtro Activo:</span>
+                <span className="meta-value" style={{ color: '#1e3a8a' }}>{filterCountry !== 'ALL' ? filterCountry : ''} {filterPhase !== 'ALL' ? filterPhase : ''}</span>
+              </div>
+            )}
           </div>
         </header>
 
@@ -508,54 +498,54 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
             })}
           </div>
 
-          {/* VIP COMPACT KPI GRID */}
+          {/* VIP COMPACT KPI GRID WITH SPARKLINES */}
           <div className="pmo-grid-kpi">
             <div className="pmo-card clickable" onClick={() => { setModal({ isOpen: true, title: 'Inventario de Avance', data: fD }); setSearchTerm(''); }}>
-              <div className="kpi-header">
-                <div className="kpi-title">Avance Real</div>
-                <div className="kpi-icon"><IconTarget /></div>
+              <div className="sparkline-container"><ReactECharts option={getSparklineOption([10,20,30,40,70,overallProgressNum], '#3b82f6')} style={{ height: '100%', width: '100%' }} /></div>
+              <div className="pmo-card-content">
+                <div className="kpi-header"><div className="kpi-title">Avance Real</div><div className="kpi-icon"><IconTarget /></div></div>
+                <div className="kpi-value">{overallProgress}%</div>
               </div>
-              <div className="kpi-value">{overallProgress}%</div>
             </div>
 
             <div className="pmo-card clickable" onClick={() => { setModal({ isOpen: true, title: 'Entregables Aprobados', data: approvedDeliverables }); setSearchTerm(''); }}>
-              <div className="kpi-header">
-                <div className="kpi-title">Tasa Cierre</div>
-                <div className="kpi-icon"><IconCheck /></div>
+              <div className="sparkline-container"><ReactECharts option={getSparklineOption([5,10,15,30,50,parseFloat(closureRate)], '#10b981')} style={{ height: '100%', width: '100%' }} /></div>
+              <div className="pmo-card-content">
+                <div className="kpi-header"><div className="kpi-title">Tasa Cierre</div><div className="kpi-icon"><IconCheck /></div></div>
+                <div className="kpi-value success">{closureRate}%</div>
               </div>
-              <div className="kpi-value success">{closureRate}%</div>
             </div>
 
             <div className="pmo-card clickable" onClick={() => { setModal({ isOpen: true, title: 'Frentes Críticos (<25%)', data: criticalDeliverables }); setSearchTerm(''); }}>
-              <div className="kpi-header">
-                <div className="kpi-title">Frentes Críticos</div>
-                <div className="kpi-icon"><IconAlert /></div>
+              <div className="sparkline-container"><ReactECharts option={getSparklineOption([10,12,8,9,5,criticalRiskCount], '#dc2626')} style={{ height: '100%', width: '100%' }} /></div>
+              <div className="pmo-card-content">
+                <div className="kpi-header"><div className="kpi-title">Frentes Críticos</div><div className="kpi-icon"><IconAlert /></div></div>
+                <div className="kpi-value danger">{criticalRiskCount}</div>
               </div>
-              <div className="kpi-value danger">{criticalRiskCount}</div>
             </div>
 
             <div className="pmo-card">
-              <div className="kpi-header">
-                <div className="kpi-title">Riesgos Activos</div>
-                <div className="kpi-icon"><IconShield /></div>
+              <div className="sparkline-container"><ReactECharts option={getSparklineOption([20,18,15,14,14,totalAlerts], '#eab308')} style={{ height: '100%', width: '100%' }} /></div>
+              <div className="pmo-card-content">
+                <div className="kpi-header"><div className="kpi-title">Riesgos Activos</div><div className="kpi-icon"><IconShield /></div></div>
+                <div className="kpi-value warning">{totalAlerts}</div>
               </div>
-              <div className="kpi-value warning">{totalAlerts}</div>
             </div>
 
             <div className="pmo-card">
-              <div className="kpi-header">
-                <div className="kpi-title">Plan Acción</div>
-                <div className="kpi-icon"><IconList /></div>
+              <div className="sparkline-container"><ReactECharts option={getSparklineOption([5,7,8,10,12,totalSteps], '#94a3b8')} style={{ height: '100%', width: '100%' }} /></div>
+              <div className="pmo-card-content">
+                <div className="kpi-header"><div className="kpi-title">Plan Acción</div><div className="kpi-icon"><IconList /></div></div>
+                <div className="kpi-value">{totalSteps}</div>
               </div>
-              <div className="kpi-value">{totalSteps}</div>
             </div>
 
             <div className="pmo-card">
-              <div className="kpi-header">
-                <div className="kpi-title">Sociedades</div>
-                <div className="kpi-icon"><IconGlobe /></div>
+              <div className="sparkline-container"><ReactECharts option={getSparklineOption([totalSocieties,totalSocieties,totalSocieties,totalSocieties,totalSocieties,totalSocieties], '#8b5cf6')} style={{ height: '100%', width: '100%' }} /></div>
+              <div className="pmo-card-content">
+                <div className="kpi-header"><div className="kpi-title">Sociedades</div><div className="kpi-icon"><IconGlobe /></div></div>
+                <div className="kpi-value">{totalSocieties}</div>
               </div>
-              <div className="kpi-value">{totalSocieties}</div>
             </div>
           </div>
 
@@ -576,15 +566,17 @@ export default function ReportView({ projectId }: { projectId: string; canEdit?:
               </div>
             </div>
 
-            {/* PIE CHARTS */}
+            {/* PIE CHARTS (INTERACTIVE CROSS-FILTERING) */}
             <div className="pmo-card" style={{ gridColumn: 'span 3' }}>
               <h2 className="pmo-section-title" style={{ fontSize: '0.85rem', marginBottom: '0.5rem' }}>Distribución Fases</h2>
-              <ReactECharts option={chartStatusDonut} style={{ height: '180px' }} />
+              <ReactECharts onEvents={onChartClick} option={chartStatusDonut} style={{ height: '180px' }} />
+              <div style={{ textAlign: 'center', fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '-10px' }}>↑ Haz clic para filtrar todo el panel</div>
             </div>
 
             <div className="pmo-card" style={{ gridColumn: 'span 3' }}>
               <h2 className="pmo-section-title" style={{ fontSize: '0.85rem', marginBottom: '0.5rem' }}>Peso Geográfico</h2>
-              <ReactECharts option={chartGeoPie} style={{ height: '180px' }} />
+              <ReactECharts onEvents={onChartClick} option={chartGeoPie} style={{ height: '180px' }} />
+              <div style={{ textAlign: 'center', fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '-10px' }}>↑ Haz clic para filtrar todo el panel</div>
             </div>
 
             {/* ADVANCED PMO VISUALS */}
